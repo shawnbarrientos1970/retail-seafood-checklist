@@ -1,0 +1,6 @@
+{
+  "name": "Mountain West Store Visit Checklist",
+  "description": "Mobile-optimized store visit checklist and inspection report generator for Mountain West Division merchandisers.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

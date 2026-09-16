@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+}
+
+/* Safe area padding utilities for iOS notch, Dynamic Island, and home indicator */
+.fixed-footer-safe {
+  padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)));
+  padding-left: max(1rem, calc(1rem + env(safe-area-inset-left, 0px)));
+  padding-right: max(1rem, calc(1rem + env(safe-area-inset-right, 0px)));
+}
+
+.header-safe {
+  padding-top: max(0.625rem, calc(0.625rem + env(safe-area-inset-top, 0px)));
+  padding-left: max(1rem, calc(1rem + env(safe-area-inset-left, 0px)));
+  padding-right: max(1rem, calc(1rem + env(safe-area-inset-right, 0px)));
+}
+
+.main-safe {
+  padding-bottom: max(8.5rem, calc(8.5rem + env(safe-area-inset-bottom, 0px)));
+  padding-left: max(1rem, calc(1rem + env(safe-area-inset-left, 0px)));
+  padding-right: max(1rem, calc(1rem + env(safe-area-inset-right, 0px)));
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)));
+}
+
+.pt-safe {
+  padding-top: max(0.5rem, calc(0.5rem + env(safe-area-inset-top, 0px)));
+}
+
+/* Ensure mobile buttons, tap targets, and form inputs satisfy Apple Human Interface Guidelines (>= 44px) */
+button,
+input,
+select,
+textarea,
+[role="button"],
+label[for],
+a {
+  touch-action: manipulation;
+}
+
+button,
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea,
+[role="button"] {
+  min-height: 44px;
+}
+
+/* Interactive label containers (checkboxes, radios, cards) minimum 44px tap target */
+label.cursor-pointer,
+label[for] {
+  min-height: 44px;
+  display: flex;
+}
+
+/* Prevent unwanted iOS Safari auto-zoom on focus by enforcing minimum 16px font size on inputs */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* Print styling for direct browser print / PDF saving */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-page-break {
+    page-break-before: always;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}

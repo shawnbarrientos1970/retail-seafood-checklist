@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180">
+  <rect width="320" height="180" fill="#ffffff" rx="8" />
+  <!-- Mountain Graphic -->
+  <g id="mountain-peaks">
+    <!-- Left Peak Background & Ridges -->
+    <polygon points="25,108 85,46 115,70 135,52 65,108" fill="#0d4685" />
+    <polygon points="25,108 85,46 100,68 70,82 45,108" fill="#1761b0" />
+
+    <!-- Central Summit & Primary High Peak -->
+    <polygon points="110,66 160,8 215,64 200,84 150,88 115,72" fill="#0f4c8e" />
+    <polygon points="160,8 185,42 165,58 145,46 130,58 120,68 110,66 160,8" fill="#1e73cf" />
+
+    <!-- Right Peak & Slopes -->
+    <polygon points="185,42 220,52 295,108 240,108 215,76 195,82" fill="#12569e" />
+    <polygon points="220,52 245,74 295,108 260,108 230,86" fill="#196ac5" />
+
+    <!-- White Snow & Ice Facet Accents -->
+    <polygon points="85,46 95,58 88,68 102,62 108,54" fill="#ffffff" />
+    <polygon points="160,8 168,26 156,36 172,32 185,42 172,46 162,38 148,46" fill="#ffffff" />
+    <polygon points="132,56 142,66 156,62 146,74 136,70" fill="#ffffff" />
+    <polygon points="198,60 210,68 202,76 218,72 225,60" fill="#ffffff" />
+    <polygon points="95,78 120,74 135,84 110,88" fill="#ffffff" />
+    <polygon points="160,70 178,76 192,72 180,82 165,80" fill="#ffffff" />
+
+    <!-- Base Mountain Foundation Bar -->
+    <polygon points="20,110 300,110 295,114 25,114" fill="#093566" />
+  </g>
+
+  <!-- Typography -->
+  <text x="160" y="138" text-anchor="middle" fill="#111827" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="24" letter-spacing="1.2">
+    MOUNTAIN WEST
+  </text>
+  <text x="160" y="155" text-anchor="middle" fill="#475569" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="12.5" letter-spacing="4">
+    DIVISION
+  </text>
+
+  <!-- Brand Marks -->
+  <g id="brand-logos" transform="translate(100, 161)">
+    <!-- Albertsons Arch -->
+    <path d="M3 13 C3 7, 7 3, 12 3 C17 3, 21 7, 21 13 Z" fill="#00529b" />
+    <path d="M7 13 C7 9, 9 6, 12 6 C15 6, 17 9, 17 13 Z" fill="#ffffff" />
+    <path d="M9 13 C9 11, 10 9.5, 12 9.5 C14 9.5, 15 11, 15 13 Z" fill="#00529b" />
+
+    <!-- Separator -->
+    <line x1="29" y1="2" x2="29" y2="15" stroke="#94a3b8" stroke-width="1.5" />
+
+    <!-- Lucky Red Script & Emblem -->
+    <g transform="translate(35, 1)">
+      <circle cx="7" cy="7.5" r="6" fill="#d32323" />
+      <circle cx="7" cy="7.5" r="3.5" fill="#ffffff" />
+      <text x="18" y="11" fill="#d32323" font-family="Brush Script MT, 'Segoe Script', cursive, sans-serif" font-weight="bold" font-size="14.5">
+        Lucky
+      </text>
+    </g>
+  </g>
+</svg>
