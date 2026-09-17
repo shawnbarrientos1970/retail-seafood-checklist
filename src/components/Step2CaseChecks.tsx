@@ -1,6 +1,7 @@
 import React from 'react';
-import { CaseDepartmentChecks } from '../types';
-import { Check, Minus, Plus, Fish, Layers, Snowflake, Sparkles, ClipboardList } from 'lucide-react';
+import { CaseDepartmentChecks, YesNoValue } from '../types';
+import { Minus, Plus, Fish, Layers, Snowflake, Sparkles, ClipboardList } from 'lucide-react';
+import { YesNoToggle } from './YesNoToggle';
 
 interface Step2CaseChecksProps {
   data: CaseDepartmentChecks;
@@ -8,10 +9,13 @@ interface Step2CaseChecksProps {
 }
 
 export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange }) => {
-  const toggleBoolean = (field: keyof Omit<CaseDepartmentChecks, 'selfServeCase' | 'frozenDoorsBunkers' | 'wetDryRacks' | 'fullServiceCase'>) => {
+  const setTopLevelField = (
+    field: keyof Omit<CaseDepartmentChecks, 'selfServeCase' | 'frozenDoorsBunkers' | 'wetDryRacks' | 'fullServiceCase'>,
+    value: YesNoValue
+  ) => {
     onChange((prev) => ({
       ...prev,
-      [field]: !prev[field],
+      [field]: value,
     }));
   };
 
@@ -72,7 +76,7 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
     return !isNaN(num) && num >= 1;
   };
 
-  const totalChecked = [
+  const allCheckValues: YesNoValue[] = [
     data.clerkScheduledAndInSeafood,
     data.seafoodCasePulledNightBefore,
     data.seafoodCaseCleanOdorFree,
@@ -95,46 +99,49 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
     data.fullServiceCase.correctSluCool,
     data.fullServiceCase.cookedShrimpDated,
     data.fullServiceCase.shellfishHarvestTags90Days,
-  ].filter(Boolean).length;
+  ];
 
-  const totalCriteria = 22;
+  const totalYes = allCheckValues.filter((v) => v === true).length;
+  const totalNo = allCheckValues.filter((v) => v === false).length;
+  const totalEvaluated = allCheckValues.filter((v) => v !== null && v !== undefined).length;
+  const totalCriteria = allCheckValues.length;
 
   const handleClearAll = () => {
     onChange((prev) => ({
       ...prev,
-      clerkScheduledAndInSeafood: false,
-      seafoodCasePulledNightBefore: false,
-      seafoodCaseCleanOdorFree: false,
-      taresDoneDaily: false,
-      deliveriesCheckedInvoice: false,
-      regulatoryDecalsAllergens: false,
-      perishableLinkUsed: false,
+      clerkScheduledAndInSeafood: null,
+      seafoodCasePulledNightBefore: null,
+      seafoodCaseCleanOdorFree: null,
+      taresDoneDaily: null,
+      deliveriesCheckedInvoice: null,
+      regulatoryDecalsAllergens: null,
+      perishableLinkUsed: null,
       selfServeCase: {
         ...prev.selfServeCase,
-        faced: false,
-        tagged: false,
-        setToSchematic: false,
-        culledRotated: false,
-        properlyMarkedDown: false,
+        faced: null,
+        tagged: null,
+        setToSchematic: null,
+        culledRotated: null,
+        properlyMarkedDown: null,
       },
       frozenDoorsBunkers: {
         ...prev.frozenDoorsBunkers,
-        setToSchematic: false,
-        facedAndTagged: false,
+        setToSchematic: null,
+        facedAndTagged: null,
       },
       wetDryRacks: {
         ...prev.wetDryRacks,
-        faced: false,
-        tagged: false,
-        setToSchematic: false,
+        faced: null,
+        tagged: null,
+        setToSchematic: null,
       },
       fullServiceCase: {
         ...prev.fullServiceCase,
-        setToSchematic: false,
-        properDividers: false,
-        correctSluCool: false,
-        cookedShrimpDated: false,
-        shellfishHarvestTags90Days: false,
+        setToSchematic: null,
+        properDividers: null,
+        correctSluCool: null,
+        cookedShrimpDated: null,
+        shellfishHarvestTags90Days: null,
       },
     }));
   };
@@ -155,17 +162,19 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                totalChecked === totalCriteria
-                  ? 'bg-blue-100 text-[#104f9b]'
-                  : totalChecked > 0
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              {totalChecked} / {totalCriteria} Checked
+          <div className="text-right flex items-center gap-1.5 flex-wrap justify-end">
+            {totalYes > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                {totalYes} YES
+              </span>
+            )}
+            {totalNo > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                {totalNo} NO
+              </span>
+            )}
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+              {totalEvaluated}/{totalCriteria} Checked
             </span>
           </div>
         </div>
@@ -173,9 +182,9 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
         {/* Individual Verification Notice & Clear Option */}
         <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
           <span className="text-slate-500 italic">
-            Check each standard individually during store walk
+            Select YES, NO, or Leave Blank for each standard during store walk
           </span>
-          {totalChecked > 0 && (
+          {totalEvaluated > 0 && (
             <button
               type="button"
               onClick={handleClearAll}
@@ -188,7 +197,7 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
       </div>
 
       {/* General Department & Case Operations */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2.5">
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
         <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
           <Fish className="w-4 h-4 text-[#104f9b]" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -197,184 +206,172 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
         </div>
 
         {/* 1. Clerk Scheduled */}
-        <label
-          htmlFor="check-clerk-scheduled"
-          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-            data.clerkScheduledAndInSeafood
-              ? 'bg-blue-50/70 border-blue-300 text-blue-950'
-              : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100/60'
+        <div
+          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            data.clerkScheduledAndInSeafood === true
+              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+              : data.clerkScheduledAndInSeafood === false
+              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+              : 'bg-white border-slate-200'
           }`}
         >
-          <input
-            id="check-clerk-scheduled"
-            type="checkbox"
-            checked={data.clerkScheduledAndInSeafood}
-            onChange={() => toggleBoolean('clerkScheduledAndInSeafood')}
-            className="sr-only"
-          />
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-              data.clerkScheduledAndInSeafood
-                ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                : 'border-slate-300 bg-white'
-            }`}
-          >
-            {data.clerkScheduledAndInSeafood && <Check className="w-4 h-4 stroke-[3]" />}
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="text-sm font-semibold text-slate-900">
+              Clerk Scheduled And In Seafood Department
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Coverage verified for department operational hours
+            </div>
           </div>
-          <div className="flex-1 text-sm font-medium">
-            Clerk Scheduled And In Seafood Department
+          <div className="shrink-0 self-end sm:self-center">
+            <YesNoToggle
+              value={data.clerkScheduledAndInSeafood}
+              onChange={(val) => setTopLevelField('clerkScheduledAndInSeafood', val)}
+              idPrefix="check-clerk-scheduled"
+              ariaLabel="Clerk Scheduled And In Seafood Department"
+            />
           </div>
-        </label>
+        </div>
 
         {/* 2. Seafood Case Pulled Night Before */}
-        <label
-          htmlFor="check-seafood-pulled"
-          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-            data.seafoodCasePulledNightBefore
-              ? 'bg-blue-50/70 border-blue-300 text-blue-950'
-              : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100/60'
+        <div
+          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            data.seafoodCasePulledNightBefore === true
+              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+              : data.seafoodCasePulledNightBefore === false
+              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+              : 'bg-white border-slate-200'
           }`}
         >
-          <input
-            id="check-seafood-pulled"
-            type="checkbox"
-            checked={data.seafoodCasePulledNightBefore}
-            onChange={() => toggleBoolean('seafoodCasePulledNightBefore')}
-            className="sr-only"
-          />
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-              data.seafoodCasePulledNightBefore
-                ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                : 'border-slate-300 bg-white'
-            }`}
-          >
-            {data.seafoodCasePulledNightBefore && <Check className="w-4 h-4 stroke-[3]" />}
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="text-sm font-semibold text-slate-900">
+              Seafood Case Pulled Night Before
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Case pulled, iced down, or covered per division closing policy
+            </div>
           </div>
-          <div className="flex-1 text-sm font-medium">
-            Seafood Case Pulled Night Before
+          <div className="shrink-0 self-end sm:self-center">
+            <YesNoToggle
+              value={data.seafoodCasePulledNightBefore}
+              onChange={(val) => setTopLevelField('seafoodCasePulledNightBefore', val)}
+              idPrefix="check-seafood-pulled"
+              ariaLabel="Seafood Case Pulled Night Before"
+            />
           </div>
-        </label>
+        </div>
 
         {/* 3. Seafood Case Clean & Odor Free */}
-        <label
-          htmlFor="check-seafood-clean"
-          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-            data.seafoodCaseCleanOdorFree
-              ? 'bg-blue-50/70 border-blue-300 text-blue-950'
-              : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100/60'
+        <div
+          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            data.seafoodCaseCleanOdorFree === true
+              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+              : data.seafoodCaseCleanOdorFree === false
+              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+              : 'bg-white border-slate-200'
           }`}
         >
-          <input
-            id="check-seafood-clean"
-            type="checkbox"
-            checked={data.seafoodCaseCleanOdorFree}
-            onChange={() => toggleBoolean('seafoodCaseCleanOdorFree')}
-            className="sr-only"
-          />
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-              data.seafoodCaseCleanOdorFree
-                ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                : 'border-slate-300 bg-white'
-            }`}
-          >
-            {data.seafoodCaseCleanOdorFree && <Check className="w-4 h-4 stroke-[3]" />}
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="text-sm font-semibold text-slate-900">
+              Seafood Case Clean, Clear Of Build-Up And Odor Free
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Trays, ice beds, glass shields, and drain troughs sanitized
+            </div>
           </div>
-          <div className="flex-1 text-sm font-medium">
-            Seafood Case Clean, Clear Of Build-Up And Odor Free
+          <div className="shrink-0 self-end sm:self-center">
+            <YesNoToggle
+              value={data.seafoodCaseCleanOdorFree}
+              onChange={(val) => setTopLevelField('seafoodCaseCleanOdorFree', val)}
+              idPrefix="check-seafood-clean"
+              ariaLabel="Seafood Case Clean, Clear Of Build-Up And Odor Free"
+            />
           </div>
-        </label>
+        </div>
 
         {/* 4. Tares Done Daily */}
-        <label
-          htmlFor="check-tares-daily"
-          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-            data.taresDoneDaily
-              ? 'bg-blue-50/70 border-blue-300 text-blue-950'
-              : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100/60'
+        <div
+          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            data.taresDoneDaily === true
+              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+              : data.taresDoneDaily === false
+              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+              : 'bg-white border-slate-200'
           }`}
         >
-          <input
-            id="check-tares-daily"
-            type="checkbox"
-            checked={data.taresDoneDaily}
-            onChange={() => toggleBoolean('taresDoneDaily')}
-            className="sr-only"
-          />
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-              data.taresDoneDaily
-                ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                : 'border-slate-300 bg-white'
-            }`}
-          >
-            {data.taresDoneDaily && <Check className="w-4 h-4 stroke-[3]" />}
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="text-sm font-semibold text-slate-900">
+              Tares Done Daily
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Service and self-serve scale tare logs verified and accurate
+            </div>
           </div>
-          <div className="flex-1 text-sm font-medium">
-            Tares Done Daily
+          <div className="shrink-0 self-end sm:self-center">
+            <YesNoToggle
+              value={data.taresDoneDaily}
+              onChange={(val) => setTopLevelField('taresDoneDaily', val)}
+              idPrefix="check-tares-daily"
+              ariaLabel="Tares Done Daily"
+            />
           </div>
-        </label>
+        </div>
 
         {/* 5. Deliveries Checked Against Invoice */}
-        <label
-          htmlFor="check-deliveries-invoice"
-          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-            data.deliveriesCheckedInvoice
-              ? 'bg-blue-50/70 border-blue-300 text-blue-950'
-              : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100/60'
+        <div
+          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            data.deliveriesCheckedInvoice === true
+              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+              : data.deliveriesCheckedInvoice === false
+              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+              : 'bg-white border-slate-200'
           }`}
         >
-          <input
-            id="check-deliveries-invoice"
-            type="checkbox"
-            checked={data.deliveriesCheckedInvoice}
-            onChange={() => toggleBoolean('deliveriesCheckedInvoice')}
-            className="sr-only"
-          />
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-              data.deliveriesCheckedInvoice
-                ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                : 'border-slate-300 bg-white'
-            }`}
-          >
-            {data.deliveriesCheckedInvoice && <Check className="w-4 h-4 stroke-[3]" />}
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="text-sm font-semibold text-slate-900">
+              Deliveries Checked Against Invoice (Shorts And Quality)
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Product counted, temp recorded, and credits submitted promptly
+            </div>
           </div>
-          <div className="flex-1 text-sm font-medium">
-            Deliveries Checked Against Invoice (Shorts And Quality)
+          <div className="shrink-0 self-end sm:self-center">
+            <YesNoToggle
+              value={data.deliveriesCheckedInvoice}
+              onChange={(val) => setTopLevelField('deliveriesCheckedInvoice', val)}
+              idPrefix="check-deliveries-invoice"
+              ariaLabel="Deliveries Checked Against Invoice"
+            />
           </div>
-        </label>
+        </div>
 
         {/* 6. Regulatory Decals & Allergens */}
-        <label
-          htmlFor="check-regulatory-decals"
-          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-            data.regulatoryDecalsAllergens
-              ? 'bg-blue-50/70 border-blue-300 text-blue-950'
-              : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100/60'
+        <div
+          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            data.regulatoryDecalsAllergens === true
+              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+              : data.regulatoryDecalsAllergens === false
+              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+              : 'bg-white border-slate-200'
           }`}
         >
-          <input
-            id="check-regulatory-decals"
-            type="checkbox"
-            checked={data.regulatoryDecalsAllergens}
-            onChange={() => toggleBoolean('regulatoryDecalsAllergens')}
-            className="sr-only"
-          />
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-              data.regulatoryDecalsAllergens
-                ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                : 'border-slate-300 bg-white'
-            }`}
-          >
-            {data.regulatoryDecalsAllergens && <Check className="w-4 h-4 stroke-[3]" />}
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="text-sm font-semibold text-slate-900">
+              Regulatory Decals & Allergens Color Added Consumer Advisory
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Health advisories, salmon color added, and allergen notices posted
+            </div>
           </div>
-          <div className="flex-1 text-sm font-medium">
-            Regulatory Decals & Allergens Color Added Consumer Advisory
+          <div className="shrink-0 self-end sm:self-center">
+            <YesNoToggle
+              value={data.regulatoryDecalsAllergens}
+              onChange={(val) => setTopLevelField('regulatoryDecalsAllergens', val)}
+              idPrefix="check-regulatory-decals"
+              ariaLabel="Regulatory Decals & Allergens Color Added Consumer Advisory"
+            />
           </div>
-        </label>
+        </div>
       </div>
 
       {/* Self-Serve Case */}
@@ -388,82 +385,43 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
           </div>
         </div>
 
-        {/* Checkbox grid */}
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => updateSelfServe('faced', !data.selfServeCase.faced)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.selfServeCase.faced
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.selfServeCase.faced ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.selfServeCase.faced && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Faced</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateSelfServe('tagged', !data.selfServeCase.tagged)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.selfServeCase.tagged
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.selfServeCase.tagged ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.selfServeCase.tagged && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Tagged</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateSelfServe('setToSchematic', !data.selfServeCase.setToSchematic)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all col-span-2 ${
-              data.selfServeCase.setToSchematic
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.selfServeCase.setToSchematic ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.selfServeCase.setToSchematic && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Set to Schematic</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateSelfServe('culledRotated', !data.selfServeCase.culledRotated)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.selfServeCase.culledRotated
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.selfServeCase.culledRotated ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.selfServeCase.culledRotated && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Culled/Rotated</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateSelfServe('properlyMarkedDown', !data.selfServeCase.properlyMarkedDown)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.selfServeCase.properlyMarkedDown
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.selfServeCase.properlyMarkedDown ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.selfServeCase.properlyMarkedDown && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Properly Marked Down</span>
-          </button>
+        {/* Yes/No Items */}
+        <div className="space-y-2.5">
+          {[
+            { key: 'faced' as const, label: 'Faced', desc: 'Product pulled forward and neat' },
+            { key: 'tagged' as const, label: 'Tagged', desc: 'Clear price and item tag on every shelf position' },
+            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Planogram layout matching active store schematic' },
+            { key: 'culledRotated' as const, label: 'Culled / Rotated', desc: 'Older dates rotated forward, poor quality culled' },
+            { key: 'properlyMarkedDown' as const, label: 'Properly Marked Down', desc: 'Yellow/orange clearance tags applied accurately' },
+          ].map((item) => {
+            const val = data.selfServeCase[item.key];
+            return (
+              <div
+                key={item.key}
+                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                  val === true
+                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+                    : val === false
+                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
+                  <div className="text-[11px] text-slate-500">{item.desc}</div>
+                </div>
+                <div className="shrink-0 self-end sm:self-center">
+                  <YesNoToggle
+                    value={val}
+                    onChange={(newVal) => updateSelfServe(item.key, newVal)}
+                    idPrefix={`self-serve-${item.key}`}
+                    compact
+                    ariaLabel={`Self-serve ${item.label}`}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Number of OOS Stepper & Missing Items Note */}
@@ -557,36 +515,39 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => updateFrozenDoors('setToSchematic', !data.frozenDoorsBunkers.setToSchematic)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.frozenDoorsBunkers.setToSchematic
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.frozenDoorsBunkers.setToSchematic ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.frozenDoorsBunkers.setToSchematic && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Set to Schematic</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateFrozenDoors('facedAndTagged', !data.frozenDoorsBunkers.facedAndTagged)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.frozenDoorsBunkers.facedAndTagged
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.frozenDoorsBunkers.facedAndTagged ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.frozenDoorsBunkers.facedAndTagged && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Faced & Tagged</span>
-          </button>
+        <div className="space-y-2.5">
+          {[
+            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Door and bunker layouts follow planogram' },
+            { key: 'facedAndTagged' as const, label: 'Faced & Tagged', desc: 'Freezer shelves fully fronted with matching tags' },
+          ].map((item) => {
+            const val = data.frozenDoorsBunkers[item.key];
+            return (
+              <div
+                key={item.key}
+                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                  val === true
+                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+                    : val === false
+                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
+                  <div className="text-[11px] text-slate-500">{item.desc}</div>
+                </div>
+                <div className="shrink-0 self-end sm:self-center">
+                  <YesNoToggle
+                    value={val}
+                    onChange={(newVal) => updateFrozenDoors(item.key, newVal)}
+                    idPrefix={`frozen-doors-${item.key}`}
+                    compact
+                    ariaLabel={`Frozen doors ${item.label}`}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Number of OOS Doors/Bunkers & Missing Items Note */}
@@ -680,51 +641,40 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => updateWetDryRacks('faced', !data.wetDryRacks.faced)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.wetDryRacks.faced
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.wetDryRacks.faced ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.wetDryRacks.faced && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Faced</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateWetDryRacks('tagged', !data.wetDryRacks.tagged)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.wetDryRacks.tagged
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.wetDryRacks.tagged ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.wetDryRacks.tagged && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Tagged</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateWetDryRacks('setToSchematic', !data.wetDryRacks.setToSchematic)}
-            className={`min-h-[44px] flex items-center gap-2 p-3 rounded-xl border text-xs font-medium text-left transition-all col-span-2 ${
-              data.wetDryRacks.setToSchematic
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.wetDryRacks.setToSchematic ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.wetDryRacks.setToSchematic && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Set to Schematic</span>
-          </button>
+        <div className="space-y-2.5">
+          {[
+            { key: 'faced' as const, label: 'Faced', desc: 'Spices, sauces, and dry rubs fronted neatly' },
+            { key: 'tagged' as const, label: 'Tagged', desc: 'Every spice rack position has current retail shelf tag' },
+            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Rack schematic alignment verified' },
+          ].map((item) => {
+            const val = data.wetDryRacks[item.key];
+            return (
+              <div
+                key={item.key}
+                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                  val === true
+                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+                    : val === false
+                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
+                  <div className="text-[11px] text-slate-500">{item.desc}</div>
+                </div>
+                <div className="shrink-0 self-end sm:self-center">
+                  <YesNoToggle
+                    value={val}
+                    onChange={(newVal) => updateWetDryRacks(item.key, newVal)}
+                    idPrefix={`wet-dry-${item.key}`}
+                    compact
+                    ariaLabel={`Wet & dry racks ${item.label}`}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Number of OOS Wet & Dry & Missing Items Note */}
@@ -818,81 +768,42 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
           </div>
         </div>
 
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => updateFullService('setToSchematic', !data.fullServiceCase.setToSchematic)}
-            className={`w-full min-h-[44px] flex items-center gap-2.5 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.fullServiceCase.setToSchematic
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.fullServiceCase.setToSchematic ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.fullServiceCase.setToSchematic && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Set to Schematic</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateFullService('properDividers', !data.fullServiceCase.properDividers)}
-            className={`w-full min-h-[44px] flex items-center gap-2.5 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.fullServiceCase.properDividers
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.fullServiceCase.properDividers ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.fullServiceCase.properDividers && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Proper Dividers</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateFullService('correctSluCool', !data.fullServiceCase.correctSluCool)}
-            className={`w-full min-h-[44px] flex items-center gap-2.5 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.fullServiceCase.correctSluCool
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.fullServiceCase.correctSluCool ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.fullServiceCase.correctSluCool && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Correct SLU / COOL (Country of Origin Labeling)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateFullService('cookedShrimpDated', !data.fullServiceCase.cookedShrimpDated)}
-            className={`w-full min-h-[44px] flex items-center gap-2.5 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.fullServiceCase.cookedShrimpDated
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.fullServiceCase.cookedShrimpDated ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.fullServiceCase.cookedShrimpDated && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Cooked Shrimp Dated</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => updateFullService('shellfishHarvestTags90Days', !data.fullServiceCase.shellfishHarvestTags90Days)}
-            className={`w-full min-h-[44px] flex items-center gap-2.5 p-3 rounded-xl border text-xs font-medium text-left transition-all ${
-              data.fullServiceCase.shellfishHarvestTags90Days
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
-          >
-            <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${data.fullServiceCase.shellfishHarvestTags90Days ? 'bg-[#104f9b] border-[#104f9b] text-white' : 'border-slate-300 bg-white'}`}>
-              {data.fullServiceCase.shellfishHarvestTags90Days && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span>Shellfish Harvest Tags Kept for 90 Days</span>
-          </button>
+        <div className="space-y-2.5">
+          {[
+            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Case display rows, species placement, and variety matching schematic' },
+            { key: 'properDividers' as const, label: 'Proper Dividers', desc: 'Sanitary clear dividers separating cooked, raw, and ready-to-eat species' },
+            { key: 'correctSluCool' as const, label: 'Correct SLU / COOL', desc: 'Country of Origin Labeling and Scale Look-Up tags correct on display' },
+            { key: 'cookedShrimpDated' as const, label: 'Cooked Shrimp Dated', desc: 'Slack dating and sell-by timers accurately tracked' },
+            { key: 'shellfishHarvestTags90Days' as const, label: 'Shellfish Harvest Tags Kept for 90 Days', desc: 'Oyster, clam, and mussel shellstock tags retained on file in chronological order' },
+          ].map((item) => {
+            const val = data.fullServiceCase[item.key];
+            return (
+              <div
+                key={item.key}
+                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  val === true
+                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+                    : val === false
+                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
+                  <div className="text-[11px] text-slate-500">{item.desc}</div>
+                </div>
+                <div className="shrink-0 self-end sm:self-center">
+                  <YesNoToggle
+                    value={val}
+                    onChange={(newVal) => updateFullService(item.key, newVal)}
+                    idPrefix={`full-service-${item.key}`}
+                    compact
+                    ariaLabel={`Full-service ${item.label}`}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Number of OOS Full-Service & Missing Items Note */}
@@ -977,35 +888,32 @@ export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange
 
       {/* Perishable Link Item */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
-        <label
-          htmlFor="check-perishable-link"
-          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-            data.perishableLinkUsed
-              ? 'bg-blue-50/70 border-blue-300 text-blue-950'
-              : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100/60'
+        <div
+          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            data.perishableLinkUsed === true
+              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+              : data.perishableLinkUsed === false
+              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+              : 'bg-white border-slate-200'
           }`}
         >
-          <input
-            id="check-perishable-link"
-            type="checkbox"
-            checked={data.perishableLinkUsed}
-            onChange={() => toggleBoolean('perishableLinkUsed')}
-            className="sr-only"
-          />
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-              data.perishableLinkUsed
-                ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                : 'border-slate-300 bg-white'
-            }`}
-          >
-            {data.perishableLinkUsed && <Check className="w-4 h-4 stroke-[3]" />}
+          <div className="flex-1 min-w-0 pr-1">
+            <div className="text-sm font-semibold text-slate-900">
+              Perishable Link Used For Overstock Items
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Inventory link maintained for excess product tracking & shrink minimization
+            </div>
           </div>
-          <div className="flex-1">
-            <div className="text-sm font-medium">Perishable Link Used For Overstock Items</div>
-            <div className="text-xs text-slate-500 mt-0.5">Inventory link maintained for excess product tracking</div>
+          <div className="shrink-0 self-end sm:self-center">
+            <YesNoToggle
+              value={data.perishableLinkUsed}
+              onChange={(val) => setTopLevelField('perishableLinkUsed', val)}
+              idPrefix="check-perishable-link"
+              ariaLabel="Perishable Link Used For Overstock Items"
+            />
           </div>
-        </label>
+        </div>
       </div>
     </div>
   );

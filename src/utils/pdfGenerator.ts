@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { ChecklistData } from '../types';
+import { ChecklistData, YesNoValue } from '../types';
 
 export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   const doc = new jsPDF({
@@ -151,28 +151,41 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   doc.text(`TOTAL RECORDED OOS: ${totalOOS}`, pageWidth - margin - 4, y + 4.5, { align: 'right' });
   y += 9;
 
-  const drawCheckItem = (label: string, checked: boolean, detail?: string) => {
+  const drawCheckItem = (label: string, value: YesNoValue, detail?: string) => {
     ensureSpace(6);
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
 
-    if (checked) {
-      doc.setFillColor(16, 79, 155); // Mountain West Blue
-      doc.rect(margin + 2, y, 4, 4, 'F');
+    if (value === true) {
+      doc.setFillColor(16, 149, 91); // Emerald Green
+      doc.roundedRect(margin + 2, y, 9, 3.8, 0.8, 0.8, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.text('✓', margin + 4, y + 3, { align: 'center' });
+      doc.setFontSize(5.5);
+      doc.text('YES', margin + 6.5, y + 2.7, { align: 'center' });
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+    } else if (value === false) {
+      doc.setFillColor(225, 29, 72); // Rose Red
+      doc.roundedRect(margin + 2, y, 9, 3.8, 0.8, 0.8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.text('NO', margin + 6.5, y + 2.7, { align: 'center' });
       doc.setTextColor(15, 23, 42);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
     } else {
       doc.setDrawColor(203, 213, 225);
-      doc.rect(margin + 2, y, 4, 4, 'D');
-      doc.setTextColor(148, 163, 184);
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(margin + 2, y, 9, 3.8, 0.8, 0.8, 'FD');
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
     }
 
-    doc.text(label, margin + 9, y + 3.2);
+    doc.text(label, margin + 13.5, y + 3.2);
 
     if (detail) {
       doc.setFont('helvetica', 'bold');
@@ -188,7 +201,7 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text(label, margin + 9, y + 3.2);
+    doc.text(label, margin + 12.5, y + 3.2);
 
     doc.setFont('helvetica', 'bold');
     if (count > 0) {
@@ -221,7 +234,7 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
     const textLines = doc.splitTextToSize(`Missing Items: ${notes.trim()}`, contentWidth - 14);
     for (const line of textLines) {
       ensureSpace(4.5);
-      doc.text(line, margin + 9, y + 2.5);
+      doc.text(line, margin + 12.5, y + 2.5);
       y += 4.5;
     }
   };
@@ -236,9 +249,11 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
 
   // Grouped Case Checks
   drawSubheader('Self-Serve Case');
-  drawCheckItem('• Faced & Tagged', data.caseDepartment.selfServeCase.faced && data.caseDepartment.selfServeCase.tagged, `Faced: ${data.caseDepartment.selfServeCase.faced ? 'Yes' : 'No'} | Tagged: ${data.caseDepartment.selfServeCase.tagged ? 'Yes' : 'No'}`);
+  drawCheckItem('• Faced', data.caseDepartment.selfServeCase.faced);
+  drawCheckItem('• Tagged', data.caseDepartment.selfServeCase.tagged);
   drawCheckItem('• Set to Schematic', data.caseDepartment.selfServeCase.setToSchematic);
-  drawCheckItem('• Culled/Rotated & Properly Marked Down', data.caseDepartment.selfServeCase.culledRotated && data.caseDepartment.selfServeCase.properlyMarkedDown, `Culled: ${data.caseDepartment.selfServeCase.culledRotated ? 'Yes' : 'No'} | Markdown: ${data.caseDepartment.selfServeCase.properlyMarkedDown ? 'Yes' : 'No'}`);
+  drawCheckItem('• Culled / Rotated', data.caseDepartment.selfServeCase.culledRotated);
+  drawCheckItem('• Properly Marked Down', data.caseDepartment.selfServeCase.properlyMarkedDown);
   drawOOSMetricLine('• Out of Stock (OOS) Count', selfServeOOS);
   drawOOSNote(data.caseDepartment.selfServeCase.oosNotes, selfServeOOS);
 
@@ -249,7 +264,8 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   drawOOSNote(data.caseDepartment.frozenDoorsBunkers.oosNotes, frozenDoorsOOS);
 
   drawSubheader('Wet & Dry Racks');
-  drawCheckItem('• Faced & Tagged', data.caseDepartment.wetDryRacks.faced && data.caseDepartment.wetDryRacks.tagged, `Faced: ${data.caseDepartment.wetDryRacks.faced ? 'Yes' : 'No'} | Tagged: ${data.caseDepartment.wetDryRacks.tagged ? 'Yes' : 'No'}`);
+  drawCheckItem('• Faced', data.caseDepartment.wetDryRacks.faced);
+  drawCheckItem('• Tagged', data.caseDepartment.wetDryRacks.tagged);
   drawCheckItem('• Set to Schematic', data.caseDepartment.wetDryRacks.setToSchematic);
   drawOOSMetricLine('• Out of Stock (OOS) Count', wetDryOOS);
   drawOOSNote(data.caseDepartment.wetDryRacks.oosNotes, wetDryOOS);

@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { ChecklistData } from '../types';
 import { generateStoreVisitPDF } from '../utils/pdfGenerator';
 import { shareStoreVisitPDF } from '../utils/pdfShare';
+import { saveVisitToHistory } from '../utils/historyStorage';
 import { PhotoModal } from './PhotoModal';
+import { PdfPreviewModal } from './PdfPreviewModal';
 import { MountainWestLogo } from './MountainWestLogo';
 import {
   FileDown,
@@ -17,22 +19,28 @@ import {
   Camera,
   Check,
   X,
+  Minus,
   RotateCcw,
   Eye,
   Share2,
+  Clock,
+  BookmarkPlus,
 } from 'lucide-react';
 
 interface Step5SummaryProps {
   data: ChecklistData;
   onReset: () => void;
+  onOpenHistory?: () => void;
 }
 
-export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => {
+export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpenHistory }) => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [pdfSuccess, setPdfSuccess] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
   const [activePhotoKey, setActivePhotoKey] = useState<string | null>(null);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [saveHistorySuccess, setSaveHistorySuccess] = useState(false);
 
   // Calculations
   const selfServeOOS = Number(data.caseDepartment.selfServeCase.numberOfOOS) || 0;
@@ -41,8 +49,37 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
   const fullServeOOS = Number(data.caseDepartment.fullServiceCase.numberOfOOS) || 0;
   const totalOOS = selfServeOOS + frozenDoorsOOS + wetDryOOS + fullServeOOS;
 
-  const complianceCount = Object.values(data.compliance).filter(Boolean).length;
+  const complianceYes = Object.values(data.compliance).filter((v) => v === true).length;
+  const complianceNo = Object.values(data.compliance).filter((v) => v === false).length;
   const photosCount = Object.values(data.photos).filter(Boolean).length;
+
+  const renderYesNoBadge = (val: boolean | null | undefined) => {
+    if (val === true) {
+      return (
+        <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-xs shrink-0">
+          <Check className="w-3.5 h-3.5 stroke-[2.5]" /> YES
+        </span>
+      );
+    }
+    if (val === false) {
+      return (
+        <span className="inline-flex items-center gap-1 font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 text-xs shrink-0">
+          <X className="w-3.5 h-3.5 stroke-[2.5]" /> NO
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 text-xs shrink-0">
+        <Minus className="w-3 h-3 stroke-[2.5]" /> Blank
+      </span>
+    );
+  };
+
+  const formatYesNoShort = (val: boolean | null | undefined) => {
+    if (val === true) return 'YES';
+    if (val === false) return 'NO';
+    return 'Blank';
+  };
 
   const handleSharePDF = async () => {
     try {
@@ -50,6 +87,10 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
       setShareFeedback(null);
       const result = await shareStoreVisitPDF(data);
       if (result.success) {
+        // Auto-save to device history on successful share
+        if (data.header.storeNumber.trim()) {
+          saveVisitToHistory(data);
+        }
         setShareFeedback({ type: 'success', message: result.message });
         setTimeout(() => setShareFeedback(null), 5000);
       } else if (!result.cancelled) {
@@ -80,6 +121,11 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
       const fileName = `MountainWest_Store${data.header.storeNumber || 'Checklist'}_${data.header.visitDate || 'Visit'}.pdf`;
       doc.save(fileName);
 
+      // Auto-save to device history on PDF download
+      if (data.header.storeNumber.trim()) {
+        saveVisitToHistory(data);
+      }
+
       setPdfSuccess(true);
       setTimeout(() => setPdfSuccess(false), 4000);
     } catch (err) {
@@ -89,8 +135,35 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
     }
   };
 
-  const handleBrowserPrint = () => {
-    window.print();
+  const handleSaveToHistory = () => {
+    if (!data.header.storeNumber.trim()) {
+      setShareFeedback({
+        type: 'error',
+        message: 'Please provide a Store # in Step 1 before saving to history.',
+      });
+      setTimeout(() => setShareFeedback(null), 4000);
+      return;
+    }
+    const res = saveVisitToHistory(data);
+    if (res.success) {
+      setSaveHistorySuccess(true);
+      setShareFeedback({
+        type: 'success',
+        message: `Store #${res.visit.storeNumber} visit saved to device history!`,
+      });
+      setTimeout(() => setSaveHistorySuccess(false), 3500);
+      setTimeout(() => setShareFeedback(null), 5000);
+    } else {
+      setShareFeedback({
+        type: 'error',
+        message: res.error || 'Failed to save visit record.',
+      });
+      setTimeout(() => setShareFeedback(null), 5000);
+    }
+  };
+
+  const handlePrintPreview = () => {
+    setShowPdfPreview(true);
   };
 
   const photoList = [
@@ -198,12 +271,48 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
             <button
               type="button"
               id="print-report-btn"
-              onClick={handleBrowserPrint}
+              onClick={handlePrintPreview}
               className="min-h-[46px] py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 text-slate-600" />
               <span>Print / Preview</span>
             </button>
+          </div>
+
+          {/* Device History Actions */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              id="save-to-history-btn"
+              onClick={handleSaveToHistory}
+              className="min-h-[46px] py-3 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#104f9b] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-blue-200/90"
+              title="Save this completed store visit to local device history"
+            >
+              {saveHistorySuccess ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Saved to History!</span>
+                </>
+              ) : (
+                <>
+                  <BookmarkPlus className="w-3.5 h-3.5 text-[#104f9b]" />
+                  <span>Save to History</span>
+                </>
+              )}
+            </button>
+
+            {onOpenHistory && (
+              <button
+                type="button"
+                id="view-saved-history-btn"
+                onClick={onOpenHistory}
+                className="min-h-[46px] py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
+                title="View previous store inspections saved on this device"
+              >
+                <Clock className="w-3.5 h-3.5 text-slate-600" />
+                <span>Visit History</span>
+              </button>
+            )}
           </div>
 
           {/* Feedback banner */}
@@ -279,9 +388,9 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
           <div className="flex items-center justify-center text-[#104f9b] mb-1">
             <ShieldCheck className="w-4 h-4" />
           </div>
-          <div className="text-xl font-black text-slate-900">{complianceCount}/10</div>
+          <div className="text-xl font-black text-slate-900">{complianceYes}/10</div>
           <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-tight mt-0.5">
-            Compliance
+            Compliance (YES)
           </div>
         </div>
 
@@ -302,7 +411,7 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
             Case & Department Checks
           </h4>
-          <span className="text-[11px] text-slate-500">Step 2 Status</span>
+          <span className="text-[11px] text-slate-500">Yes / No Status</span>
         </div>
 
         <div className="space-y-1.5 text-xs">
@@ -315,17 +424,9 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
             { label: 'Regulatory Decals & Allergens Consumer Advisory', val: data.caseDepartment.regulatoryDecalsAllergens },
             { label: 'Perishable Link Used For Overstock Items', val: data.caseDepartment.perishableLinkUsed },
           ].map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
+            <div key={idx} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
               <span className="text-slate-700 pr-2">{item.label}</span>
-              {item.val ? (
-                <span className="inline-flex items-center gap-1 font-bold text-emerald-600 shrink-0">
-                  <Check className="w-3.5 h-3.5" /> Pass
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 font-medium text-slate-400 shrink-0">
-                  <X className="w-3.5 h-3.5" /> No
-                </span>
-              )}
+              {renderYesNoBadge(item.val)}
             </div>
           ))}
         </div>
@@ -341,8 +442,8 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
               <div className="font-semibold text-slate-900 mt-0.5">
                 {selfServeOOS} OOS items
               </div>
-              <div className="text-[10px] text-slate-400">
-                Faced: {data.caseDepartment.selfServeCase.faced ? '✓' : '✗'} | Tagged: {data.caseDepartment.selfServeCase.tagged ? '✓' : '✗'}
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                Faced: <span className="font-bold">{formatYesNoShort(data.caseDepartment.selfServeCase.faced)}</span> | Tagged: <span className="font-bold">{formatYesNoShort(data.caseDepartment.selfServeCase.tagged)}</span>
               </div>
               {selfServeOOS >= 1 && data.caseDepartment.selfServeCase.oosNotes?.trim() && (
                 <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-[11px] text-rose-700 bg-rose-50/70 p-1.5 rounded">
@@ -356,8 +457,8 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
               <div className="font-semibold text-slate-900 mt-0.5">
                 {frozenDoorsOOS} OOS doors/bunkers
               </div>
-              <div className="text-[10px] text-slate-400">
-                Schematic: {data.caseDepartment.frozenDoorsBunkers.setToSchematic ? '✓' : '✗'} | Faced: {data.caseDepartment.frozenDoorsBunkers.facedAndTagged ? '✓' : '✗'}
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                Schematic: <span className="font-bold">{formatYesNoShort(data.caseDepartment.frozenDoorsBunkers.setToSchematic)}</span> | Faced: <span className="font-bold">{formatYesNoShort(data.caseDepartment.frozenDoorsBunkers.facedAndTagged)}</span>
               </div>
               {frozenDoorsOOS >= 1 && data.caseDepartment.frozenDoorsBunkers.oosNotes?.trim() && (
                 <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-[11px] text-rose-700 bg-rose-50/70 p-1.5 rounded">
@@ -371,8 +472,8 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
               <div className="font-semibold text-slate-900 mt-0.5">
                 {wetDryOOS} OOS items
               </div>
-              <div className="text-[10px] text-slate-400">
-                Faced: {data.caseDepartment.wetDryRacks.faced ? '✓' : '✗'} | Schematic: {data.caseDepartment.wetDryRacks.setToSchematic ? '✓' : '✗'}
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                Faced: <span className="font-bold">{formatYesNoShort(data.caseDepartment.wetDryRacks.faced)}</span> | Schematic: <span className="font-bold">{formatYesNoShort(data.caseDepartment.wetDryRacks.setToSchematic)}</span>
               </div>
               {wetDryOOS >= 1 && data.caseDepartment.wetDryRacks.oosNotes?.trim() && (
                 <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-[11px] text-rose-700 bg-rose-50/70 p-1.5 rounded">
@@ -386,8 +487,8 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
               <div className="font-semibold text-slate-900 mt-0.5">
                 {fullServeOOS} OOS items
               </div>
-              <div className="text-[10px] text-slate-400">
-                SLU/COOL: {data.caseDepartment.fullServiceCase.correctSluCool ? '✓' : '✗'} | Tags 90D: {data.caseDepartment.fullServiceCase.shellfishHarvestTags90Days ? '✓' : '✗'}
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                SLU/COOL: <span className="font-bold">{formatYesNoShort(data.caseDepartment.fullServiceCase.correctSluCool)}</span> | Tags 90D: <span className="font-bold">{formatYesNoShort(data.caseDepartment.fullServiceCase.shellfishHarvestTags90Days)}</span>
               </div>
               {fullServeOOS >= 1 && data.caseDepartment.fullServiceCase.oosNotes?.trim() && (
                 <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-[11px] text-rose-700 bg-rose-50/70 p-1.5 rounded">
@@ -403,8 +504,9 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-            Compliance & Training ({complianceCount}/10)
+            Compliance & Training ({complianceYes} YES / {complianceNo} NO)
           </h4>
+          <span className="text-[11px] text-slate-500">10 Standards</span>
         </div>
 
         <div className="grid grid-cols-1 gap-1 text-xs">
@@ -420,17 +522,9 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
             { label: 'Food Safety/Seafood Handling/Dating Policy', val: data.compliance.foodSafetyHandlingDatingPolicy },
             { label: 'Mark Down Procedures', val: data.compliance.markDownProcedures },
           ].map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between py-1">
+            <div key={idx} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
               <span className="text-slate-700">{item.label}</span>
-              {item.val ? (
-                <span className="text-emerald-600 font-bold flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> Pass
-                </span>
-              ) : (
-                <span className="text-slate-400 flex items-center gap-1">
-                  <X className="w-3.5 h-3.5" /> No
-                </span>
-              )}
+              {renderYesNoBadge(item.val)}
             </div>
           ))}
         </div>
@@ -533,6 +627,13 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset }) => 
         photos={lightboxItems}
         activeKey={activePhotoKey}
         onSelectPhoto={(key) => setActivePhotoKey(key)}
+      />
+
+      {/* Official PDF Report Print & Preview Modal */}
+      <PdfPreviewModal
+        isOpen={showPdfPreview}
+        onClose={() => setShowPdfPreview(false)}
+        data={data}
       />
     </div>
   );

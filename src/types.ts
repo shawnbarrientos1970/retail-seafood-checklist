@@ -5,66 +5,68 @@ export interface HeaderInfo {
   merchandiserName: string;
 }
 
+export type YesNoValue = boolean | null;
+
 export interface SelfServeCaseChecks {
-  faced: boolean;
-  tagged: boolean;
-  setToSchematic: boolean;
+  faced: boolean | null;
+  tagged: boolean | null;
+  setToSchematic: boolean | null;
   numberOfOOS: number | '';
   oosNotes?: string;
-  culledRotated: boolean;
-  properlyMarkedDown: boolean;
+  culledRotated: boolean | null;
+  properlyMarkedDown: boolean | null;
 }
 
 export interface FrozenDoorsChecks {
-  setToSchematic: boolean;
+  setToSchematic: boolean | null;
   numberOfOOS: number | '';
   oosNotes?: string;
-  facedAndTagged: boolean;
+  facedAndTagged: boolean | null;
 }
 
 export interface WetDryRacksChecks {
-  faced: boolean;
-  tagged: boolean;
-  setToSchematic: boolean;
+  faced: boolean | null;
+  tagged: boolean | null;
+  setToSchematic: boolean | null;
   numberOfOOS: number | '';
   oosNotes?: string;
 }
 
 export interface FullServiceCaseChecks {
-  setToSchematic: boolean;
+  setToSchematic: boolean | null;
   numberOfOOS: number | '';
   oosNotes?: string;
-  properDividers: boolean;
-  correctSluCool: boolean;
-  cookedShrimpDated: boolean;
-  shellfishHarvestTags90Days: boolean;
+  properDividers: boolean | null;
+  correctSluCool: boolean | null;
+  cookedShrimpDated: boolean | null;
+  shellfishHarvestTags90Days: boolean | null;
 }
 
 export interface CaseDepartmentChecks {
-  clerkScheduledAndInSeafood: boolean;
-  seafoodCasePulledNightBefore: boolean;
-  seafoodCaseCleanOdorFree: boolean;
-  taresDoneDaily: boolean;
-  deliveriesCheckedInvoice: boolean;
-  regulatoryDecalsAllergens: boolean;
+  clerkScheduledAndInSeafood: boolean | null;
+  seafoodCasePulledNightBefore: boolean | null;
+  seafoodCaseCleanOdorFree: boolean | null;
+  taresDoneDaily: boolean | null;
+  deliveriesCheckedInvoice: boolean | null;
+  regulatoryDecalsAllergens: boolean | null;
   selfServeCase: SelfServeCaseChecks;
   frozenDoorsBunkers: FrozenDoorsChecks;
   wetDryRacks: WetDryRacksChecks;
   fullServiceCase: FullServiceCaseChecks;
-  perishableLinkUsed: boolean;
+  perishableLinkUsed: boolean | null;
 }
 
 export interface ComplianceTrainingChecks {
-  adSupport: boolean;
-  coolersFreezersOrganizedDated: boolean;
-  temperatureChecks: boolean;
-  salesPurchasesTrackingReviewed: boolean;
-  form120Submitted: boolean;
-  visionProScannedProductionList: boolean;
-  schematicIntegrityOnline: boolean;
-  newProgramBulletinMeatSeafood: boolean;
-  foodSafetyHandlingDatingPolicy: boolean;
-  markDownProcedures: boolean;
+  adSupport: boolean | null;
+  coolersFreezersOrganizedDated: boolean | null;
+  temperatureChecks: boolean | null;
+  salesPurchasesTrackingReviewed: boolean | null;
+  form120Submitted: boolean | null;
+  visionProScannedProductionList: boolean | null;
+  schematicIntegrityOnline: boolean | null;
+  newProgramBulletinMeatSeafood: boolean | null;
+  foodSafetyHandlingDatingPolicy: boolean | null;
+  markDownProcedures: boolean | null;
 }
 
 export interface PhotoCaptureData {
@@ -82,3 +84,20 @@ export interface ChecklistData {
   photos: PhotoCaptureData;
   generalNotes: string;
 }
+
+export interface SavedStoreVisit {
+  id: string;
+  savedAt: string;
+  formattedDate: string;
+  storeNumber: string;
+  districtNumber: string;
+  visitDate: string;
+  merchandiserName: string;
+  totalOOS: number;
+  complianceYes: number;
+  complianceNo: number;
+  photosCount: number;
+  generalNotesSnippet: string;
+  data: ChecklistData;
+}
+

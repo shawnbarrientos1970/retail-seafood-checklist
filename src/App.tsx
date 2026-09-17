@@ -6,10 +6,13 @@ import { Step2CaseChecks } from './components/Step2CaseChecks';
 import { Step3Compliance } from './components/Step3Compliance';
 import { Step4PhotosNotes } from './components/Step4PhotosNotes';
 import { Step5Summary } from './components/Step5Summary';
+import { VisitHistoryModal } from './components/VisitHistoryModal';
+import { PdfPreviewModal } from './components/PdfPreviewModal';
 import { MountainWestLogo } from './components/MountainWestLogo';
-import { ChevronLeft, ChevronRight, FileDown, ShieldCheck, RotateCcw, CheckCircle2, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileDown, ShieldCheck, RotateCcw, CheckCircle2, Share2, Clock } from 'lucide-react';
 import { generateStoreVisitPDF } from './utils/pdfGenerator';
 import { shareStoreVisitPDF } from './utils/pdfShare';
+import { getSavedVisits } from './utils/historyStorage';
 
 const FORM_AUTOSAVE_KEY = 'mwd_store_visit_form_state';
 const STEP_AUTOSAVE_KEY = 'mwd_store_visit_current_step';
@@ -30,56 +33,56 @@ const initialData: ChecklistData = {
     merchandiserName: '',
   },
   caseDepartment: {
-    clerkScheduledAndInSeafood: false,
-    seafoodCasePulledNightBefore: false,
-    seafoodCaseCleanOdorFree: false,
-    taresDoneDaily: false,
-    deliveriesCheckedInvoice: false,
-    regulatoryDecalsAllergens: false,
+    clerkScheduledAndInSeafood: null,
+    seafoodCasePulledNightBefore: null,
+    seafoodCaseCleanOdorFree: null,
+    taresDoneDaily: null,
+    deliveriesCheckedInvoice: null,
+    regulatoryDecalsAllergens: null,
     selfServeCase: {
-      faced: false,
-      tagged: false,
-      setToSchematic: false,
+      faced: null,
+      tagged: null,
+      setToSchematic: null,
       numberOfOOS: 0,
       oosNotes: '',
-      culledRotated: false,
-      properlyMarkedDown: false,
+      culledRotated: null,
+      properlyMarkedDown: null,
     },
     frozenDoorsBunkers: {
-      setToSchematic: false,
+      setToSchematic: null,
       numberOfOOS: 0,
       oosNotes: '',
-      facedAndTagged: false,
+      facedAndTagged: null,
     },
     wetDryRacks: {
-      faced: false,
-      tagged: false,
-      setToSchematic: false,
+      faced: null,
+      tagged: null,
+      setToSchematic: null,
       numberOfOOS: 0,
       oosNotes: '',
     },
     fullServiceCase: {
-      setToSchematic: false,
+      setToSchematic: null,
       numberOfOOS: 0,
       oosNotes: '',
-      properDividers: false,
-      correctSluCool: false,
-      cookedShrimpDated: false,
-      shellfishHarvestTags90Days: false,
+      properDividers: null,
+      correctSluCool: null,
+      cookedShrimpDated: null,
+      shellfishHarvestTags90Days: null,
     },
-    perishableLinkUsed: false,
+    perishableLinkUsed: null,
   },
   compliance: {
-    adSupport: false,
-    coolersFreezersOrganizedDated: false,
-    temperatureChecks: false,
-    salesPurchasesTrackingReviewed: false,
-    form120Submitted: false,
-    visionProScannedProductionList: false,
-    schematicIntegrityOnline: false,
-    newProgramBulletinMeatSeafood: false,
-    foodSafetyHandlingDatingPolicy: false,
-    markDownProcedures: false,
+    adSupport: null,
+    coolersFreezersOrganizedDated: null,
+    temperatureChecks: null,
+    salesPurchasesTrackingReviewed: null,
+    form120Submitted: null,
+    visionProScannedProductionList: null,
+    schematicIntegrityOnline: null,
+    newProgramBulletinMeatSeafood: null,
+    foodSafetyHandlingDatingPolicy: null,
+    markDownProcedures: null,
   },
   photos: {
     coolerFreezer: null,
@@ -181,6 +184,15 @@ export default function App() {
   const [headerErrors, setHeaderErrors] = useState<Record<string, string>>({});
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isSaved, setIsSaved] = useState<boolean>(true);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyCount, setHistoryCount] = useState<number>(() => {
+    try {
+      return getSavedVisits().length;
+    } catch {
+      return 0;
+    }
+  });
+  const [historyPdfPreviewData, setHistoryPdfPreviewData] = useState<ChecklistData | null>(null);
 
   // Automatically save form state to localStorage every time an input changes
   useEffect(() => {
@@ -289,10 +301,28 @@ export default function App() {
 
           <div className="flex items-center gap-2">
             {data.header.storeNumber && (
-              <div className="px-2.5 py-1 rounded-md bg-blue-900/60 border border-blue-700/60 text-[11px] font-mono font-bold text-sky-200">
+              <div className="hidden sm:block px-2.5 py-1 rounded-md bg-blue-900/60 border border-blue-700/60 text-[11px] font-mono font-bold text-sky-200">
                 Store #{data.header.storeNumber}
               </div>
             )}
+            <button
+              type="button"
+              id="top-history-btn"
+              onClick={() => {
+                setHistoryCount(getSavedVisits().length);
+                setShowHistoryModal(true);
+              }}
+              className="min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-950/90 border border-blue-800/80 text-xs text-blue-200 hover:text-white hover:bg-blue-900/80 active:bg-blue-800 transition-colors cursor-pointer relative"
+              title="View saved store visit history on this device"
+            >
+              <Clock className="w-3.5 h-3.5 shrink-0 text-sky-400" />
+              <span>History</span>
+              {historyCount > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-sky-500 text-[10px] font-bold text-white flex items-center justify-center">
+                  {historyCount}
+                </span>
+              )}
+            </button>
             <button
               type="button"
               id="top-reset-checklist-btn"
@@ -387,6 +417,10 @@ export default function App() {
           <Step5Summary
             data={data}
             onReset={() => setShowResetConfirm(true)}
+            onOpenHistory={() => {
+              setHistoryCount(getSavedVisits().length);
+              setShowHistoryModal(true);
+            }}
           />
         )}
       </main>
@@ -485,6 +519,33 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Local Store Visit History Modal */}
+      <VisitHistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => {
+          setShowHistoryModal(false);
+          setHistoryCount(getSavedVisits().length);
+        }}
+        currentData={data}
+        onLoadVisit={(savedData) => {
+          setData(savedData);
+          setCurrentStep(5);
+          setHistoryCount(getSavedVisits().length);
+        }}
+        onOpenPdfPreview={(previewData) => {
+          setHistoryPdfPreviewData(previewData);
+        }}
+      />
+
+      {/* Historical Report PDF Print & Preview Modal */}
+      {historyPdfPreviewData && (
+        <PdfPreviewModal
+          isOpen={Boolean(historyPdfPreviewData)}
+          onClose={() => setHistoryPdfPreviewData(null)}
+          data={historyPdfPreviewData}
+        />
       )}
     </div>
   );

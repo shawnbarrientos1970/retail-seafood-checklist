@@ -1,6 +1,7 @@
 import React from 'react';
-import { ComplianceTrainingChecks } from '../types';
-import { Check, ShieldCheck, FileCheck, Thermometer, TrendingUp, Scan, Globe, BookOpen, AlertOctagon, Tag } from 'lucide-react';
+import { ComplianceTrainingChecks, YesNoValue } from '../types';
+import { ShieldCheck, FileCheck, Thermometer, TrendingUp, Scan, Globe, BookOpen, AlertOctagon, Tag } from 'lucide-react';
+import { YesNoToggle } from './YesNoToggle';
 
 interface Step3ComplianceProps {
   data: ComplianceTrainingChecks;
@@ -76,21 +77,24 @@ const complianceItems: Array<{
 ];
 
 export const Step3Compliance: React.FC<Step3ComplianceProps> = ({ data, onChange }) => {
-  const toggleItem = (key: keyof ComplianceTrainingChecks) => {
+  const setComplianceValue = (key: keyof ComplianceTrainingChecks, val: YesNoValue) => {
     onChange((prev) => ({
       ...prev,
-      [key]: !prev[key],
+      [key]: val,
     }));
   };
 
-  const totalPassed = Object.values(data).filter(Boolean).length;
+  const values = complianceItems.map((item) => data[item.key]);
+  const totalYes = values.filter((v) => v === true).length;
+  const totalNo = values.filter((v) => v === false).length;
+  const totalEvaluated = values.filter((v) => v !== null && v !== undefined).length;
   const totalCount = complianceItems.length;
 
   const handleClearAll = () => {
     onChange((prev) => {
       const next = { ...prev };
       complianceItems.forEach((item) => {
-        next[item.key] = false;
+        next[item.key] = null;
       });
       return next;
     });
@@ -108,19 +112,24 @@ export const Step3Compliance: React.FC<Step3ComplianceProps> = ({ data, onChange
             <div>
               <h3 className="font-bold text-slate-900 text-lg">Compliance & Training</h3>
               <p className="text-xs text-slate-500">
-                Mountain West Division auditing & focused training items
+                Division seafood policy, food safety, and retail operations
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-              totalPassed === totalCount
-                ? 'bg-blue-100 text-[#104f9b]'
-                : totalPassed >= 7
-                ? 'bg-sky-100 text-sky-800'
-                : 'bg-amber-100 text-amber-800'
-            }`}>
-              {totalPassed} / {totalCount} Passed
+
+          <div className="text-right flex items-center gap-1.5 flex-wrap justify-end">
+            {totalYes > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                {totalYes} YES
+              </span>
+            )}
+            {totalNo > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                {totalNo} NO
+              </span>
+            )}
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+              {totalEvaluated}/{totalCount} Evaluated
             </span>
           </div>
         </div>
@@ -128,9 +137,9 @@ export const Step3Compliance: React.FC<Step3ComplianceProps> = ({ data, onChange
         {/* Individual Verification Notice & Clear Option */}
         <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
           <span className="text-slate-500 italic">
-            Check each standard individually during store walk
+            Select YES, NO, or Leave Blank for each compliance standard during store walk
           </span>
-          {totalPassed > 0 && (
+          {totalEvaluated > 0 && (
             <button
               type="button"
               onClick={handleClearAll}
@@ -145,48 +154,51 @@ export const Step3Compliance: React.FC<Step3ComplianceProps> = ({ data, onChange
       {/* Compliance List */}
       <div className="space-y-2.5">
         {complianceItems.map((item) => {
-          const isChecked = Boolean(data[item.key]);
+          const val = data[item.key];
           const Icon = item.icon;
 
           return (
-            <label
+            <div
               key={item.key}
-              htmlFor={`compliance-${item.key}`}
-              className={`flex items-start gap-3.5 p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.99] ${
-                isChecked
-                  ? 'bg-blue-50/70 border-blue-300 shadow-xs'
-                  : 'bg-white border-slate-200 hover:bg-slate-50/70'
+              className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 ${
+                val === true
+                  ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
+                  : val === false
+                  ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
+                  : 'bg-white border-slate-200'
               }`}
             >
-              <input
-                id={`compliance-${item.key}`}
-                type="checkbox"
-                checked={isChecked}
-                onChange={() => toggleItem(item.key)}
-                className="sr-only"
-              />
-              <div
-                className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all mt-0.5 ${
-                  isChecked
-                    ? 'bg-[#104f9b] border-[#104f9b] text-white'
-                    : 'border-slate-300 bg-white text-transparent'
-                }`}
-              >
-                {isChecked && <Check className="w-4 h-4 stroke-[3]" />}
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border ${
+                    val === true
+                      ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                      : val === false
+                      ? 'bg-rose-100 border-rose-200 text-rose-700'
+                      : 'bg-slate-100 border-slate-200 text-slate-500'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-slate-900 leading-tight">
+                    {item.title}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
               </div>
 
-              <div className="flex-1">
-                <div className="flex items-center gap-1.5">
-                  <Icon className={`w-4 h-4 ${isChecked ? 'text-[#104f9b]' : 'text-slate-400'}`} />
-                  <span className={`text-sm font-semibold leading-tight ${isChecked ? 'text-blue-950' : 'text-slate-800'}`}>
-                    {item.title}
-                  </span>
-                </div>
-                <p className={`text-xs mt-1 leading-relaxed ${isChecked ? 'text-blue-900/80' : 'text-slate-500'}`}>
-                  {item.desc}
-                </p>
+              <div className="shrink-0 self-end sm:self-center">
+                <YesNoToggle
+                  value={val}
+                  onChange={(newVal) => setComplianceValue(item.key, newVal)}
+                  idPrefix={`compliance-${item.key}`}
+                  ariaLabel={item.title}
+                />
               </div>
-            </label>
+            </div>
           );
         })}
       </div>

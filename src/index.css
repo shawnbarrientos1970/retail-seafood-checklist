@@ -20,8 +20,11 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Safe area padding utilities for iOS notch, Dynamic Island, and home indicator */
-.fixed-footer-safe {
+/* 
+ * Safe area padding utilities for iOS iPhone notch, Dynamic Island, and home indicator bar
+ */
+.fixed-footer-safe,
+[data-fixed-footer] {
   padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)));
   padding-left: max(1rem, calc(1rem + env(safe-area-inset-left, 0px)));
   padding-right: max(1rem, calc(1rem + env(safe-area-inset-right, 0px)));
@@ -47,12 +50,16 @@ body {
   padding-top: max(0.5rem, calc(0.5rem + env(safe-area-inset-top, 0px)));
 }
 
-/* Ensure mobile buttons, tap targets, and form inputs satisfy Apple Human Interface Guidelines (>= 44px) */
+/* 
+ * Ensure all buttons, tap targets, and inputs have a minimum height/padding (at least 44px)
+ * to satisfy Apple Human Interface Guidelines for iOS/iPhone touch screens without misclicks
+ */
 button,
 input,
 select,
 textarea,
 [role="button"],
+label.cursor-pointer,
 label[for],
 a {
   touch-action: manipulation;
@@ -64,6 +71,11 @@ select,
 textarea,
 [role="button"] {
   min-height: 44px;
+}
+
+button,
+[role="button"] {
+  min-width: 44px;
 }
 
 /* Interactive label containers (checkboxes, radios, cards) minimum 44px tap target */
