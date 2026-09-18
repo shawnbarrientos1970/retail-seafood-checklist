@@ -5,7 +5,6 @@ import { shareStoreVisitPDF } from '../utils/pdfShare';
 import { saveVisitToHistory } from '../utils/historyStorage';
 import { PhotoModal } from './PhotoModal';
 import { PdfPreviewModal } from './PdfPreviewModal';
-import { MountainWestLogo } from './MountainWestLogo';
 import {
   FileDown,
   Printer,
@@ -185,19 +184,6 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpe
 
   return (
     <div id="step-5-container" className="space-y-4">
-      {/* Brand Header Banner */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex items-center justify-between">
-        <MountainWestLogo size="sm" />
-        <div className="text-right">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#104f9b] block">
-            Albertsons • Lucky
-          </span>
-          <span className="text-xs font-semibold text-slate-700">
-            Store #{data.header.storeNumber || '—'}
-          </span>
-        </div>
-      </div>
-
       {/* Header card with confirmation */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
         <div className="flex items-center justify-between mb-3">

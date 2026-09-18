@@ -1,6 +1,59 @@
 import { jsPDF } from 'jspdf';
 import { ChecklistData, YesNoValue } from '../types';
 
+/**
+ * Safely inspects the natural aspect ratio (width / height) of an image
+ * so that inspection photos are rendered in their true optical proportions
+ * rather than being stretched horizontally or vertically to fit fixed rectangles.
+ */
+function getImageAspectRatio(doc: jsPDF, dataUrl: string): number {
+  // 1. Try jsPDF native image properties
+  try {
+    const props = doc.getImageProperties(dataUrl);
+    if (props && props.width > 0 && props.height > 0) {
+      return props.width / props.height;
+    }
+  } catch {
+    // Continue to fallback
+  }
+
+  // 2. Parse JPEG SOF marker if available in base64 Data URL
+  try {
+    if (typeof dataUrl === 'string' && dataUrl.includes('base64,')) {
+      const base64 = dataUrl.split('base64,')[1];
+      if (base64) {
+        const binaryString = atob(base64.slice(0, 8192));
+        if (binaryString.charCodeAt(0) === 0xff && binaryString.charCodeAt(1) === 0xd8) {
+          let i = 2;
+          while (i < binaryString.length - 8) {
+            if (binaryString.charCodeAt(i) !== 0xff) {
+              i++;
+              continue;
+            }
+            const marker = binaryString.charCodeAt(i + 1);
+            // SOF0 (Baseline), SOF1 (Extended), SOF2 (Progressive)
+            if (marker === 0xc0 || marker === 0xc1 || marker === 0xc2) {
+              const height = (binaryString.charCodeAt(i + 5) << 8) | binaryString.charCodeAt(i + 6);
+              const width = (binaryString.charCodeAt(i + 7) << 8) | binaryString.charCodeAt(i + 8);
+              if (width > 0 && height > 0) {
+                return width / height;
+              }
+            }
+            if (marker === 0xda || marker === 0xd9) break;
+            const len = (binaryString.charCodeAt(i + 2) << 8) | binaryString.charCodeAt(i + 3);
+            i += 2 + len;
+          }
+        }
+      }
+    }
+  } catch {
+    // Continue to fallback
+  }
+
+  // 3. Fallback to standard 4:3 camera photo aspect ratio
+  return 4 / 3;
+}
+
 export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -351,8 +404,13 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
     doc.text(`STEP 4: REQUIRED AUDIT PHOTO DOCUMENTATION (${photosWithImages.length}/5 ATTACHED)`, margin + 4, y + 5.5);
     y += 12;
 
-    const colWidth = (contentWidth - 6) / 2;
-    const imgHeight = 48;
+    const gap = 6;
+    const colWidth = (contentWidth - gap) / 2;
+    const cardHeight = 68; // Generous height to accommodate upright portrait & landscape photos
+    const headerHeight = 7;
+    const photoBoxPadding = 2;
+    const boxW = colWidth - photoBoxPadding * 2;
+    const boxH = cardHeight - headerHeight - photoBoxPadding * 2;
 
     for (let i = 0; i < photosWithImages.length; i++) {
       const item = photosWithImages[i];
@@ -360,29 +418,43 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
       if (!rawImg) continue;
 
       const col = i % 2;
-      const xPos = margin + col * (colWidth + 6);
+      const xPos = margin + col * (colWidth + gap);
 
       // Check if starting a new row and need space on page
-      if (col === 0 && y + imgHeight + 14 > pageHeight - margin) {
+      if (col === 0 && y + cardHeight + 16 > pageHeight - margin) {
         doc.addPage();
         y = margin;
         drawHeaderMini();
       }
 
-      // Border frame and title for photo
+      // Border frame and title for photo card
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(203, 213, 225);
-      doc.roundedRect(xPos, y, colWidth, imgHeight + 9, 2, 2, 'FD');
+      doc.roundedRect(xPos, y, colWidth, cardHeight, 2, 2, 'FD');
 
+      // Card header: Title and Subtitle
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(30, 41, 59);
-      doc.text(item.label, xPos + 3, y + 5);
+      doc.text(item.label, xPos + 3, y + 4.8);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
-      doc.text(item.sub, xPos + colWidth - 3, y + 5, { align: 'right' });
+      doc.text(item.sub, xPos + colWidth - 3, y + 4.8, { align: 'right' });
+
+      // Subtle divider below header
+      doc.setDrawColor(226, 232, 240);
+      doc.line(xPos, y + 6.8, xPos + colWidth, y + 6.8);
+
+      // Photo frame area inside the card
+      const boxX = xPos + photoBoxPadding;
+      const boxY = y + headerHeight + photoBoxPadding;
+
+      // Soft neutral photo matte background
+      doc.setFillColor(241, 245, 249);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(boxX, boxY, boxW, boxH, 1, 1, 'FD');
 
       // Determine format and normalize base64 Data URL
       let format = 'JPEG';
@@ -397,22 +469,50 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
         }
       }
 
+      // Inspect the photo's true optical aspect ratio to avoid horizontal/vertical distortion
+      const imgAspect = getImageAspectRatio(doc, formattedImg);
+      const boxAspect = boxW / boxH;
+
+      let renderW = boxW;
+      let renderH = boxH;
+      let imgX = boxX;
+      let imgY = boxY;
+
+      if (imgAspect > boxAspect) {
+        // Image is wider than container (widescreen / landscape) -> fit to container width, center vertically
+        renderW = boxW;
+        renderH = boxW / imgAspect;
+        imgX = boxX;
+        imgY = boxY + (boxH - renderH) / 2;
+      } else {
+        // Image is taller than container (e.g. portrait iPhone photo) or standard 4:3 -> fit to height, center horizontally
+        renderH = boxH;
+        renderW = boxH * imgAspect;
+        imgX = boxX + (boxW - renderW) / 2;
+        imgY = boxY;
+      }
+
       try {
-        doc.addImage(formattedImg, format, xPos + 2, y + 7, colWidth - 4, imgHeight, undefined, 'FAST');
+        doc.addImage(formattedImg, format, imgX, imgY, renderW, renderH, undefined, 'FAST');
+        // Crisp framing border around the photo
+        doc.setDrawColor(203, 213, 225);
+        doc.rect(imgX, imgY, renderW, renderH, 'D');
       } catch (err) {
         console.warn('PDF image embed fallback:', err);
         try {
-          doc.addImage(formattedImg, xPos + 2, y + 7, colWidth - 4, imgHeight, undefined, 'FAST');
+          doc.addImage(formattedImg, imgX, imgY, renderW, renderH, undefined, 'FAST');
+          doc.setDrawColor(203, 213, 225);
+          doc.rect(imgX, imgY, renderW, renderH, 'D');
         } catch {
           doc.setFont('helvetica', 'italic');
           doc.setFontSize(7.5);
           doc.setTextColor(148, 163, 184);
-          doc.text('[Image rendering unavailable]', xPos + 4, y + 25);
+          doc.text('[Image rendering unavailable]', boxX + 4, boxY + boxH / 2);
         }
       }
 
       if (col === 1 || i === photosWithImages.length - 1) {
-        y += imgHeight + 13;
+        y += cardHeight + 4;
       }
     }
   }

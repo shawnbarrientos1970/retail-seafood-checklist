@@ -347,7 +347,7 @@ export default function App() {
       </header>
 
       {/* Main Content Area (iPhone scrollable viewport with safe area clearance) */}
-      <main className="flex-1 max-w-md w-full mx-auto p-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]">
+      <main className="flex-1 max-w-md w-full mx-auto p-4 main-safe pb-[max(8.5rem,calc(8.5rem+env(safe-area-inset-bottom,0px)))]">
         {currentStep === 1 && (
           <Step1Header
             data={data.header}

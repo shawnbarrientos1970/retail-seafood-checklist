@@ -7,6 +7,10 @@
   --sal: env(safe-area-inset-left, 0px);
 }
 
+/*
+ * iOS / iPhone Viewport & Scaling:
+ * Prevent automatic text-size adjustments on orientation change
+ */
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -21,13 +25,18 @@ body {
 }
 
 /* 
- * Safe area padding utilities for iOS iPhone notch, Dynamic Island, and home indicator bar
+ * Safe-Area Padding for Fixed Footer Buttons:
+ * Ensures fixed bottom buttons and actions are never hidden behind the iPhone home indicator bar
  */
 .fixed-footer-safe,
 [data-fixed-footer] {
-  padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)));
+  padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px))) !important;
   padding-left: max(1rem, calc(1rem + env(safe-area-inset-left, 0px)));
   padding-right: max(1rem, calc(1rem + env(safe-area-inset-right, 0px)));
+}
+
+.safe-area-bottom {
+  padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px))) !important;
 }
 
 .header-safe {
@@ -37,13 +46,13 @@ body {
 }
 
 .main-safe {
-  padding-bottom: max(8.5rem, calc(8.5rem + env(safe-area-inset-bottom, 0px)));
+  padding-bottom: max(8.5rem, calc(8.5rem + env(safe-area-inset-bottom, 0px))) !important;
   padding-left: max(1rem, calc(1rem + env(safe-area-inset-left, 0px)));
   padding-right: max(1rem, calc(1rem + env(safe-area-inset-right, 0px)));
 }
 
 .pb-safe {
-  padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)));
+  padding-bottom: max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px))) !important;
 }
 
 .pt-safe {
@@ -51,41 +60,36 @@ body {
 }
 
 /* 
+ * Minimum 44px Touch Targets per Apple Human Interface Guidelines:
  * Ensure all buttons, tap targets, and inputs have a minimum height/padding (at least 44px)
- * to satisfy Apple Human Interface Guidelines for iOS/iPhone touch screens without misclicks
+ * so they are easy to tap with a finger on a mobile screen without accidental misclicks.
  */
-button,
-input,
-select,
-textarea,
-[role="button"],
-label.cursor-pointer,
-label[for],
-a {
-  touch-action: manipulation;
-}
-
 button,
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 select,
 textarea,
-[role="button"] {
+[role="button"],
+[role="tab"],
+.touch-target,
+.btn {
   min-height: 44px;
+  touch-action: manipulation;
 }
 
 button,
-[role="button"] {
+[role="button"],
+[role="tab"] {
   min-width: 44px;
 }
 
-/* Interactive label containers (checkboxes, radios, cards) minimum 44px tap target */
+/* Interactive label containers (e.g. custom toggles, checkboxes, upload cards) */
 label.cursor-pointer,
 label[for] {
   min-height: 44px;
-  display: flex;
+  touch-action: manipulation;
 }
 
-/* Prevent unwanted iOS Safari auto-zoom on focus by enforcing minimum 16px font size on inputs */
+/* Prevent unwanted automatic iOS Safari zoom on focus by setting 16px font size on form inputs */
 input,
 select,
 textarea {
