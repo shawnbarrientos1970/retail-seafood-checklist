@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { ChecklistData } from '../types';
-import { generateStoreVisitPDF } from '../utils/pdfGenerator';
+import { generateStoreVisitPDF, generateSimpleChecklistPDF } from '../utils/pdfGenerator';
 import { shareStoreVisitPDF } from '../utils/pdfShare';
 import { saveVisitToHistory } from '../utils/historyStorage';
 import { PhotoModal } from './PhotoModal';
-import { PdfPreviewModal } from './PdfPreviewModal';
+import { PdfPreviewModal, ReportExportType } from './PdfPreviewModal';
 import {
   FileDown,
   Printer,
@@ -24,6 +24,9 @@ import {
   Share2,
   Clock,
   BookmarkPlus,
+  FileCheck2,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 
 interface Step5SummaryProps {
@@ -39,6 +42,7 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpe
   const [shareFeedback, setShareFeedback] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
   const [activePhotoKey, setActivePhotoKey] = useState<string | null>(null);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [previewReportType, setPreviewReportType] = useState<ReportExportType>('simple');
   const [saveHistorySuccess, setSaveHistorySuccess] = useState(false);
 
   // Calculations
@@ -51,6 +55,11 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpe
   const complianceYes = Object.values(data.compliance).filter((v) => v === true).length;
   const complianceNo = Object.values(data.compliance).filter((v) => v === false).length;
   const photosCount = Object.values(data.photos).filter(Boolean).length;
+
+  const handleOpenReportPreview = (type: ReportExportType) => {
+    setPreviewReportType(type);
+    setShowPdfPreview(true);
+  };
 
   const renderYesNoBadge = (val: boolean | null | undefined) => {
     if (val === true) {
@@ -204,85 +213,120 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpe
           </span>
         </div>
 
-        {/* Action Buttons for Mobile */}
-        <div className="space-y-2 pt-2">
-          {/* Primary Mobile Action: Share PDF Report via Web Share API */}
-          <button
-            type="button"
-            id="share-pdf-btn"
-            onClick={handleSharePDF}
-            disabled={isSharing || isGeneratingPDF}
-            className="w-full min-h-[50px] py-3.5 px-4 rounded-xl bg-[#104f9b] hover:bg-[#0c4080] active:bg-[#093264] active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-75 cursor-pointer"
-          >
-            {isSharing ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Preparing Share Sheet...</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4 text-sky-200" />
-                <span>Share PDF (Email / Messages)</span>
-              </>
-            )}
-          </button>
+        {/* Final Report Export Options: Simple vs Detailed */}
+        <div className="pt-3 border-t border-slate-100 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#104f9b]" />
+              Select Report Export Format
+            </span>
+            <span className="text-[11px] text-slate-500">Opens preview before printing/downloading</span>
+          </div>
 
-          {/* Secondary Actions: Download & Print */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* OPTION 1: Generate Simple Report */}
             <button
               type="button"
-              id="download-pdf-btn"
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPDF || isSharing}
-              className="min-h-[46px] py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              id="generate-simple-report-btn"
+              onClick={() => handleOpenReportPreview('simple')}
+              className="w-full text-left p-4 rounded-2xl border-2 border-[#104f9b] bg-gradient-to-br from-blue-50/70 to-white hover:from-blue-100/70 hover:to-blue-50 active:scale-[0.99] transition-all cursor-pointer group shadow-xs hover:shadow-md flex flex-col justify-between"
             >
-              {isGeneratingPDF ? (
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-[#104f9b] text-white flex items-center justify-center shadow-xs">
+                    <FileCheck2 className="w-5 h-5" />
+                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#104f9b] text-white tracking-wide uppercase">
+                    Official Format
+                  </span>
+                </div>
+                <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#104f9b] transition-colors">
+                  Generate Simple Report
+                </h4>
+                <p className="text-[11.5px] text-slate-600 mt-1 leading-snug">
+                  Mountain West Division checklist layout with <strong className="text-slate-800 font-semibold">Y / N / Blank</strong> notation, OOS numbers, and direct transition to the 5-photo grid sheet (Field Notes omitted).
+                </p>
+              </div>
+
+              <div className="mt-3.5 pt-2.5 border-t border-blue-200/60 flex items-center justify-between text-xs font-bold text-[#104f9b]">
+                <span className="inline-flex items-center gap-1">
+                  <Eye className="w-3.5 h-3.5" /> Preview Checklist
+                </span>
+                <span className="text-[11px] font-semibold text-slate-500">2 Pages (Checklist + Photo Grid)</span>
+              </div>
+            </button>
+
+            {/* OPTION 2: Generate Detailed Report */}
+            <button
+              type="button"
+              id="generate-detailed-report-btn"
+              onClick={() => handleOpenReportPreview('detailed')}
+              className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-[#104f9b] bg-white hover:bg-slate-50/80 active:scale-[0.99] transition-all cursor-pointer group shadow-xs hover:shadow-md flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-slate-800 group-hover:bg-[#104f9b] text-white flex items-center justify-center transition-colors shadow-xs">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                    Full Audit
+                  </span>
+                </div>
+                <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#104f9b] transition-colors">
+                  Generate Detailed Report
+                </h4>
+                <p className="text-[11.5px] text-slate-600 mt-1 leading-snug">
+                  Executive audit scorecard, dedicated full-page Field Notes & observations log, and single-page 5-photo grid.
+                </p>
+              </div>
+
+              <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 group-hover:text-[#104f9b]">
+                <span className="inline-flex items-center gap-1">
+                  <Eye className="w-3.5 h-3.5" /> Preview Detailed Audit
+                </span>
+                <span className="text-[11px] font-semibold text-slate-500">3 Pages (Audit + Notes + Photos)</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Secondary Quick Toolbar: Share, Direct Download & Device History */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+            <button
+              type="button"
+              id="quick-share-pdf-btn"
+              onClick={handleSharePDF}
+              disabled={isSharing || isGeneratingPDF}
+              className="min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              {isSharing ? (
                 <>
                   <div className="w-3.5 h-3.5 border-2 border-[#104f9b] border-t-transparent rounded-full animate-spin" />
-                  <span>Generating...</span>
-                </>
-              ) : pdfSuccess ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Downloaded!</span>
+                  <span>Sharing...</span>
                 </>
               ) : (
                 <>
-                  <FileDown className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Download PDF</span>
+                  <Share2 className="w-3.5 h-3.5 text-sky-700" />
+                  <span>Share Sheet</span>
                 </>
               )}
             </button>
 
             <button
               type="button"
-              id="print-report-btn"
-              onClick={handlePrintPreview}
-              className="min-h-[46px] py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-600" />
-              <span>Print / Preview</span>
-            </button>
-          </div>
-
-          {/* Device History Actions */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
               id="save-to-history-btn"
               onClick={handleSaveToHistory}
-              className="min-h-[46px] py-3 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#104f9b] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-blue-200/90"
+              className="min-h-[44px] py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#104f9b] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-blue-200/90"
               title="Save this completed store visit to local device history"
             >
               {saveHistorySuccess ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Saved to History!</span>
+                  <span>Saved!</span>
                 </>
               ) : (
                 <>
                   <BookmarkPlus className="w-3.5 h-3.5 text-[#104f9b]" />
-                  <span>Save to History</span>
+                  <span>Save History</span>
                 </>
               )}
             </button>
@@ -292,7 +336,7 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpe
                 type="button"
                 id="view-saved-history-btn"
                 onClick={onOpenHistory}
-                className="min-h-[46px] py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
+                className="col-span-2 sm:col-span-1 min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
                 title="View previous store inspections saved on this device"
               >
                 <Clock className="w-3.5 h-3.5 text-slate-600" />
@@ -620,6 +664,7 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpe
         isOpen={showPdfPreview}
         onClose={() => setShowPdfPreview(false)}
         data={data}
+        initialReportType={previewReportType}
       />
     </div>
   );

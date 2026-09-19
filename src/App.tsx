@@ -9,7 +9,7 @@ import { Step5Summary } from './components/Step5Summary';
 import { VisitHistoryModal } from './components/VisitHistoryModal';
 import { PdfPreviewModal } from './components/PdfPreviewModal';
 import { MountainWestLogo } from './components/MountainWestLogo';
-import { ChevronLeft, ChevronRight, FileDown, ShieldCheck, RotateCcw, CheckCircle2, Share2, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileDown, ShieldCheck, RotateCcw, CheckCircle2, Share2, Clock, Eye } from 'lucide-react';
 import { generateStoreVisitPDF } from './utils/pdfGenerator';
 import { shareStoreVisitPDF } from './utils/pdfShare';
 import { getSavedVisits } from './utils/historyStorage';
@@ -193,6 +193,10 @@ export default function App() {
     }
   });
   const [historyPdfPreviewData, setHistoryPdfPreviewData] = useState<ChecklistData | null>(null);
+  const [appPreviewModal, setAppPreviewModal] = useState<{ isOpen: boolean; type: 'simple' | 'detailed' }>({
+    isOpen: false,
+    type: 'simple',
+  });
 
   // Automatically save form state to localStorage every time an input changes
   useEffect(() => {
@@ -463,7 +467,7 @@ export default function App() {
               <button
                 type="button"
                 id="wizard-quick-share-btn"
-                onClick={() => shareStoreVisitPDF(data)}
+                onClick={() => shareStoreVisitPDF(data, 'simple')}
                 className="flex-1 min-h-[48px] py-3 px-3 rounded-xl bg-[#104f9b] hover:bg-[#0c4080] active:bg-[#093264] font-bold text-sm text-white flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
               >
                 <Share2 className="w-4 h-4" />
@@ -471,17 +475,13 @@ export default function App() {
               </button>
               <button
                 type="button"
-                id="wizard-quick-pdf-btn"
-                onClick={() => {
-                  const doc = generateStoreVisitPDF(data);
-                  const fileName = `MountainWest_Store${data.header.storeNumber || 'Checklist'}_${data.header.visitDate || 'Visit'}.pdf`;
-                  doc.save(fileName);
-                }}
+                id="wizard-quick-preview-btn"
+                onClick={() => setAppPreviewModal({ isOpen: true, type: 'simple' })}
                 className="min-h-[48px] px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 font-semibold text-xs text-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                title="Download PDF directly"
+                title="Preview and download report"
               >
-                <FileDown className="w-4 h-4" />
-                <span>PDF</span>
+                <Eye className="w-4 h-4 text-[#104f9b]" />
+                <span>Preview</span>
               </button>
             </div>
           )}
@@ -547,6 +547,14 @@ export default function App() {
           data={historyPdfPreviewData}
         />
       )}
+
+      {/* Active Wizard Report Preview Modal */}
+      <PdfPreviewModal
+        isOpen={appPreviewModal.isOpen}
+        onClose={() => setAppPreviewModal((prev) => ({ ...prev, isOpen: false }))}
+        data={data}
+        initialReportType={appPreviewModal.type}
+      />
     </div>
   );
 }

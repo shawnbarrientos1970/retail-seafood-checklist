@@ -1,5 +1,5 @@
 import { ChecklistData } from '../types';
-import { generateStoreVisitPDF } from './pdfGenerator';
+import { generateStoreVisitPDF, generateSimpleChecklistPDF } from './pdfGenerator';
 
 export interface ShareReportResult {
   success: boolean;
@@ -19,14 +19,18 @@ export function isWebShareSupported(): boolean {
  * Shares the generated PDF report using the Web Share API (Messages, Mail, AirDrop, WhatsApp, etc.).
  * Gracefully falls back to downloading the PDF if Web Share is unavailable or restricted.
  */
-export async function shareStoreVisitPDF(data: ChecklistData): Promise<ShareReportResult> {
-  const doc = generateStoreVisitPDF(data);
+export async function shareStoreVisitPDF(
+  data: ChecklistData,
+  reportType: 'detailed' | 'simple' = 'simple'
+): Promise<ShareReportResult> {
+  const doc = reportType === 'detailed' ? generateStoreVisitPDF(data) : generateSimpleChecklistPDF(data);
   const storeNum = data.header.storeNumber || 'Checklist';
   const visitDate = data.header.visitDate || 'Visit';
-  const fileName = `MountainWest_Store${storeNum}_${visitDate}.pdf`;
+  const typePrefix = reportType === 'detailed' ? 'DetailedReport' : 'SimpleChecklist';
+  const fileName = `MountainWest_${typePrefix}_Store${storeNum}_${visitDate}.pdf`;
   
-  const title = `Mountain West Store #${storeNum} Visit Report`;
-  const text = `Mountain West Division Store Visit Report for Store #${storeNum} (${data.header.visitDate || 'Today'}). Audited by ${data.header.merchandiserName || 'Merchandiser'}.`;
+  const title = `Mountain West Store #${storeNum} ${reportType === 'detailed' ? 'Detailed Audit Report' : 'Checklist'}`;
+  const text = `Mountain West Division Seafood Inspection Report for Store #${storeNum} (${data.header.visitDate || 'Today'}). Audited by ${data.header.merchandiserName || 'Merchandiser'}.`;
 
   let pdfFile: File | null = null;
   try {
