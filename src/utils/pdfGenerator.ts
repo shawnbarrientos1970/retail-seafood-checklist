@@ -67,27 +67,6 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   const contentWidth = pageWidth - margin * 2;
   let y = margin;
 
-  // Helper for checking page overflow
-  const ensureSpace = (neededHeight: number) => {
-    if (y + neededHeight > pageHeight - margin) {
-      doc.addPage();
-      y = margin;
-      drawHeaderMini();
-    }
-  };
-
-  const drawHeaderMini = () => {
-    doc.setFillColor(16, 79, 155); // Mountain West Blue
-    doc.rect(margin, y, contentWidth, 8, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`MOUNTAIN WEST DIVISION — STORE #${data.header.storeNumber || 'N/A'} (DISTRICT ${data.header.districtNumber || 'N/A'})`, margin + 4, y + 5.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Date: ${data.header.visitDate || 'N/A'}`, pageWidth - margin - 4, y + 5.5, { align: 'right' });
-    y += 12;
-  };
-
   // --- TOP HEADER BANNER ---
   doc.setFillColor(16, 79, 155); // Mountain West Blue #104f9b
   doc.rect(margin, y, contentWidth, 23, 'F');
@@ -194,7 +173,6 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   const totalOOS = selfServeOOS + frozenDoorsOOS + wetDryOOS + fullServeOOS;
 
   // --- SECTION 1: CASE & DEPARTMENT CHECKS ---
-  ensureSpace(12);
   doc.setFillColor(16, 79, 155); // Mountain West Blue
   doc.rect(margin, y, contentWidth, 6.5, 'F');
   doc.setFont('helvetica', 'bold');
@@ -205,90 +183,85 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   y += 9;
 
   const drawCheckItem = (label: string, value: YesNoValue, detail?: string) => {
-    ensureSpace(6);
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
 
     if (value === true) {
       doc.setFillColor(16, 149, 91); // Emerald Green
-      doc.roundedRect(margin + 2, y, 9, 3.8, 0.8, 0.8, 'F');
+      doc.roundedRect(margin + 2, y, 8.5, 3.6, 0.8, 0.8, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(5.5);
-      doc.text('YES', margin + 6.5, y + 2.7, { align: 'center' });
+      doc.text('YES', margin + 6.25, y + 2.6, { align: 'center' });
       doc.setTextColor(15, 23, 42);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
     } else if (value === false) {
       doc.setFillColor(225, 29, 72); // Rose Red
-      doc.roundedRect(margin + 2, y, 9, 3.8, 0.8, 0.8, 'F');
+      doc.roundedRect(margin + 2, y, 8.5, 3.6, 0.8, 0.8, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(5.5);
-      doc.text('NO', margin + 6.5, y + 2.7, { align: 'center' });
+      doc.text('NO', margin + 6.25, y + 2.6, { align: 'center' });
       doc.setTextColor(15, 23, 42);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
     } else {
       doc.setDrawColor(203, 213, 225);
       doc.setFillColor(241, 245, 249);
-      doc.roundedRect(margin + 2, y, 9, 3.8, 0.8, 0.8, 'FD');
+      doc.roundedRect(margin + 2, y, 8.5, 3.6, 0.8, 0.8, 'FD');
       doc.setTextColor(100, 116, 139);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
     }
 
-    doc.text(label, margin + 13.5, y + 3.2);
+    doc.text(label, margin + 13, y + 2.8);
 
     if (detail) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(71, 85, 105);
-      doc.text(detail, pageWidth - margin - 4, y + 3.2, { align: 'right' });
+      doc.text(detail, pageWidth - margin - 4, y + 2.8, { align: 'right' });
     }
 
-    y += 5.5;
+    y += 5.0;
   };
 
   const drawOOSMetricLine = (label: string, count: number) => {
-    ensureSpace(6);
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text(label, margin + 12.5, y + 3.2);
+    doc.text(label, margin + 12, y + 2.8);
 
     doc.setFont('helvetica', 'bold');
     if (count > 0) {
       doc.setTextColor(185, 28, 28);
-      doc.text(`${count} Out of Stock`, pageWidth - margin - 4, y + 3.2, { align: 'right' });
+      doc.text(`${count} Out of Stock`, pageWidth - margin - 4, y + 2.8, { align: 'right' });
     } else {
       doc.setTextColor(100, 116, 139);
-      doc.text('0 OOS Items', pageWidth - margin - 4, y + 3.2, { align: 'right' });
+      doc.text('0 OOS Items', pageWidth - margin - 4, y + 2.8, { align: 'right' });
     }
-    y += 5.5;
+    y += 5.0;
   };
 
   const drawSubheader = (title: string) => {
-    ensureSpace(7);
     doc.setFillColor(241, 245, 249); // slate-100
-    doc.rect(margin, y, contentWidth, 5, 'F');
+    doc.rect(margin, y, contentWidth, 4.8, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
+    doc.setFontSize(7.8);
     doc.setTextColor(51, 65, 85);
-    doc.text(title, margin + 4, y + 3.6);
-    y += 6.5;
+    doc.text(title, margin + 4, y + 3.4);
+    y += 5.8;
   };
 
   const drawOOSNote = (notes?: string, count: number = 1) => {
     if (count <= 0 || !notes || !notes.trim()) return;
-    ensureSpace(6);
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7.2);
     doc.setTextColor(185, 28, 28); // rose-700
     const textLines = doc.splitTextToSize(`Missing Items: ${notes.trim()}`, contentWidth - 14);
     for (const line of textLines) {
-      ensureSpace(4.5);
-      doc.text(line, margin + 12.5, y + 2.5);
-      y += 4.5;
+      doc.text(line, margin + 12, y + 2.2);
+      y += 4.2;
     }
   };
 
@@ -332,236 +305,278 @@ export function generateStoreVisitPDF(data: ChecklistData): jsPDF {
   drawOOSMetricLine('• Out of Stock (OOS) Count', fullServeOOS);
   drawOOSNote(data.caseDepartment.fullServiceCase.oosNotes, fullServeOOS);
 
-  y += 3;
+  // --- BOTTOM PAGE 1 SIGN-OFF LINE ---
+  const p1FooterY = 267.5;
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.line(margin, p1FooterY, pageWidth - margin, p1FooterY);
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    `Mountain West Division Inspection Document • Store #${data.header.storeNumber || '—'} (District ${data.header.districtNumber || '—'}) • Audited by ${data.header.merchandiserName || 'LusaMerica Merchandiser'}`,
+    margin,
+    p1FooterY + 4
+  );
+  doc.text(
+    'Store Audit Checklist • Page 1 of 2',
+    pageWidth - margin,
+    p1FooterY + 4,
+    { align: 'right' }
+  );
+
+  // ==========================================
+  // PAGE 2: COMPLIANCE TRAINING & FIELD NOTES
+  // Both fit cleanly on Page 2 without leaving blank gaps!
+  // ==========================================
+  doc.addPage();
+  y = 10;
+
+  // Page 2 Header Banner
+  doc.setFillColor(16, 79, 155); // Mountain West Blue
+  doc.rect(margin, y, contentWidth, 7.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(
+    `MOUNTAIN WEST DIVISION — STORE #${data.header.storeNumber || '—'} (DISTRICT ${data.header.districtNumber || '—'})`,
+    margin + 4,
+    y + 5.2
+  );
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.2);
+  doc.text(
+    `Date: ${data.header.visitDate || 'Today'} • Compliance & Merchandiser Field Log`,
+    pageWidth - margin - 4,
+    y + 5.2,
+    { align: 'right' }
+  );
+  y += 11.5;
 
   // --- SECTION 2: COMPLIANCE & FOCUSED TRAINING ---
-  ensureSpace(12);
+  doc.setFillColor(16, 79, 155); // Mountain West Blue
+  doc.rect(margin, y, contentWidth, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('STEP 3: COMPLIANCE & FOCUSED TRAINING', margin + 4, y + 4.2);
+  y += 8;
+
+  const drawComplianceItem = (label: string, value: YesNoValue) => {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+
+    if (value === true) {
+      doc.setFillColor(16, 149, 91); // Emerald Green
+      doc.roundedRect(margin + 2, y, 8.5, 3.6, 0.8, 0.8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.text('YES', margin + 6.25, y + 2.6, { align: 'center' });
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+    } else if (value === false) {
+      doc.setFillColor(225, 29, 72); // Rose Red
+      doc.roundedRect(margin + 2, y, 8.5, 3.6, 0.8, 0.8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.text('NO', margin + 6.25, y + 2.6, { align: 'center' });
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+    } else {
+      doc.setDrawColor(203, 213, 225);
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(margin + 2, y, 8.5, 3.6, 0.8, 0.8, 'FD');
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+    }
+
+    doc.text(label, margin + 13, y + 2.8);
+    y += 4.8;
+  };
+
+  drawComplianceItem('Ad Support', data.compliance.adSupport);
+  drawComplianceItem('Coolers/Freezers Organized And Dated', data.compliance.coolersFreezersOrganizedDated);
+  drawComplianceItem('Temperature Checks', data.compliance.temperatureChecks);
+  drawComplianceItem('Sales And Purchases Tracking Reviewed', data.compliance.salesPurchasesTrackingReviewed);
+  drawComplianceItem('Form 120 Submitted For Short/Poor Quality Product', data.compliance.form120Submitted);
+  drawComplianceItem('Vision Pro Scanned And Production List Followed', data.compliance.visionProScannedProductionList);
+  drawComplianceItem('Schematic Integrity - Accessing Schematics Online', data.compliance.schematicIntegrityOnline);
+  drawComplianceItem('New Program/New Bulletin - Accessing On Meat & Seafood Page', data.compliance.newProgramBulletinMeatSeafood);
+  drawComplianceItem('Food Safety / Seafood Handling / Dating Policy', data.compliance.foodSafetyHandlingDatingPolicy);
+  drawComplianceItem('Mark Down Procedures', data.compliance.markDownProcedures);
+
+  y += 3.5;
+
+  // --- STEP 4: MERCHANDISER FIELD NOTES & AUDIT OBSERVATIONS ---
+  // Starts immediately on the continuation of the checklist page without a blank gap!
   doc.setFillColor(16, 79, 155); // Mountain West Blue
   doc.rect(margin, y, contentWidth, 6.5, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text('STEP 3: COMPLIANCE & FOCUSED TRAINING', margin + 4, y + 4.5);
-  y += 9;
-
-  drawCheckItem('Ad Support', data.compliance.adSupport);
-  drawCheckItem('Coolers/Freezers Organized And Dated', data.compliance.coolersFreezersOrganizedDated);
-  drawCheckItem('Temperature Checks', data.compliance.temperatureChecks);
-  drawCheckItem('Sales And Purchases Tracking Reviewed', data.compliance.salesPurchasesTrackingReviewed);
-  drawCheckItem('Form 120 Submitted For Short/Poor Quality Product', data.compliance.form120Submitted);
-  drawCheckItem('Vision Pro Scanned And Production List Followed', data.compliance.visionProScannedProductionList);
-  drawCheckItem('Schematic Integrity - Accessing Schematics Online', data.compliance.schematicIntegrityOnline);
-  drawCheckItem('New Program/New Bulletin - Accessing On Meat & Seafood Page', data.compliance.newProgramBulletinMeatSeafood);
-  drawCheckItem('Food Safety / Seafood Handling / Dating Policy', data.compliance.foodSafetyHandlingDatingPolicy);
-  drawCheckItem('Mark Down Procedures', data.compliance.markDownProcedures);
-
-  y += 3;
-
-  // --- FOOTER SIGN-OFF FOR CHECKLIST SHEET ---
-  ensureSpace(16);
-  doc.setDrawColor(203, 213, 225);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 4;
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(
-    `Audit checklist and score evaluations prepared by ${data.header.merchandiserName || 'LusaMerica Merchandiser'} on ${new Date().toLocaleDateString()} for Mountain West Division.`,
-    margin,
-    y + 3
-  );
-
-  // --- STEP 4: DEDICATED FULL PAGE FOR FIELD NOTES & OBSERVATIONS ---
-  // Appears immediately after the main checklist page, right before the photo grid
-  renderDetailedFieldNotesPage(doc, data);
-
-  // --- STEP 5: FINAL PAGE SINGLE-SHEET 5-PHOTO GRID ---
-  renderPhotoGridSheet(doc, data, {
-    headerTitle: `STEP 5: REQUIRED AUDIT PHOTO DOCUMENTATION (STORE #${data.header.storeNumber || '—'})`,
-    headerSubtitle: `5 Mandatory Case Inspection Photos • Single-Sheet Grid Layout`,
-  });
-
-  return doc;
-}
-
-/**
- * Dedicated Full-Page Layout for Field Notes & Merchandiser Observations in the Detailed Report.
- * Positioned immediately after the main checklist page and right before the 5-photo grid.
- */
-function renderDetailedFieldNotesPage(doc: jsPDF, data: ChecklistData): void {
-  doc.addPage();
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const leftMargin = 14;
-  const rightMargin = 14;
-  const contentWidth = pageWidth - leftMargin - rightMargin;
-
-  // 1. Top Header Banner
-  doc.setFillColor(16, 79, 155); // Mountain West Blue #104f9b
-  doc.rect(leftMargin, 10, contentWidth, 14, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(255, 255, 255);
-  doc.text('STEP 4: MERCHANDISER FIELD NOTES & AUDIT OBSERVATIONS', leftMargin + 5, 17);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(224, 242, 254);
-  doc.text(
-    `Store #${data.header.storeNumber || '—'} (District #${data.header.districtNumber || '—'}) • Inspection Date: ${data.header.visitDate || 'Today'}`,
-    leftMargin + 5,
-    21.5
-  );
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('DEDICATED FIELD LOG', pageWidth - rightMargin - 5, 18.5, { align: 'right' });
-
-  let y = 29;
-
-  // 2. Metadata Info Strip
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(leftMargin, y, contentWidth, 12, 1.5, 1.5, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('LUSAMERICA MERCHANDISER', leftMargin + 6, y + 4.5);
-  doc.text('STORE NUMBER', leftMargin + 65, y + 4.5);
-  doc.text('DISTRICT', leftMargin + 115, y + 4.5);
-  doc.text('VISIT DATE', leftMargin + 145, y + 4.5);
-
-  doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text(data.header.merchandiserName?.trim() || 'LusaMerica Merchandiser', leftMargin + 6, y + 9.2);
-  doc.text(data.header.storeNumber || '—', leftMargin + 65, y + 9.2);
-  doc.text(data.header.districtNumber || '—', leftMargin + 115, y + 9.2);
-  doc.text(data.header.visitDate || 'Today', leftMargin + 145, y + 9.2);
+  doc.setTextColor(255, 255, 255);
+  doc.text('STEP 4: MERCHANDISER FIELD NOTES & AUDIT OBSERVATIONS', margin + 4, y + 4.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(224, 242, 254);
+  doc.text('Dedicated Field Log & Action Items', pageWidth - margin - 4, y + 4.5, { align: 'right' });
+  y += 9.5;
 
-  y += 17;
-
-  // 3. Main Field Notes Card Container
-  const mainCardH = 158;
+  // Main Field Notes Container Box
+  const notesCardH = 104;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(203, 213, 225);
   doc.setLineWidth(0.3);
-  doc.roundedRect(leftMargin, y, contentWidth, mainCardH, 2, 2, 'FD');
+  doc.roundedRect(margin, y, contentWidth, notesCardH, 1.5, 1.5, 'FD');
 
   // Card Header Banner
   doc.setFillColor(241, 245, 249);
-  doc.roundedRect(leftMargin, y, contentWidth, 9, 2, 2, 'F');
+  doc.roundedRect(margin, y, contentWidth, 7, 1.5, 1.5, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(8.2);
   doc.setTextColor(15, 23, 42);
-  doc.text('FIELD OBSERVATIONS, ACTION ITEMS & MERCHANDISING NOTES', leftMargin + 5, y + 6);
+  doc.text('FIELD OBSERVATIONS, ACTION ITEMS & MERCHANDISING NOTES', margin + 4, y + 4.8);
 
   // Status Badge
   doc.setFillColor(224, 242, 254);
   doc.setDrawColor(186, 230, 253);
-  doc.roundedRect(pageWidth - rightMargin - 32, y + 2, 28, 5, 1, 1, 'FD');
+  doc.roundedRect(pageWidth - margin - 26, y + 1.2, 22, 4.4, 0.8, 0.8, 'FD');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   doc.setTextColor(3, 105, 161);
-  doc.text('Official Field Log', pageWidth - rightMargin - 18, y + 5.5, { align: 'center' });
+  doc.text('Official Field Log', pageWidth - margin - 15, y + 4.2, { align: 'center' });
 
   // Notes Body Text Area
-  const textX = leftMargin + 6;
-  const textY = y + 16;
-  const textW = contentWidth - 12;
+  const textX = margin + 5;
+  const textY = y + 12.5;
+  const textW = contentWidth - 10;
 
   const notesContent = data.generalNotes?.trim()
     ? data.generalNotes.trim()
     : 'All required seafood department cases, walk-in coolers, schematics, and food safety standards were reviewed during this store visit. Department personnel were briefed on proper rotation, dating, and merchandising execution according to Mountain West Division guidelines.';
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(51, 65, 85);
 
   const splitNotes = doc.splitTextToSize(notesContent, textW);
-  doc.text(splitNotes, textX, textY);
+  const visibleNotes = splitNotes.slice(0, 11);
+  doc.text(visibleNotes, textX, textY);
+  if (splitNotes.length > 11) {
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(100, 116, 139);
+    doc.text('...', textX, textY + 11 * 4.4);
+  }
 
-  // 4. Compliance & Action Checklist Summary at bottom of card
-  const checklistBoxY = y + mainCardH - 46;
+  // Highlights & Operational Metrics Divider inside Notes Card
+  const highlightsY = y + notesCardH - 33;
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.25);
-  doc.line(leftMargin + 6, checklistBoxY, pageWidth - rightMargin - 6, checklistBoxY);
+  doc.line(margin + 4, highlightsY, pageWidth - margin - 4, highlightsY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7.6);
   doc.setTextColor(30, 41, 59);
-  doc.text('AUDIT SUMMARY HIGHLIGHTS & OPERATIONAL METRICS', leftMargin + 6, checklistBoxY + 6);
+  doc.text('AUDIT SUMMARY HIGHLIGHTS & OPERATIONAL METRICS', margin + 4, highlightsY + 5.2);
 
-  const totalOOS =
-    (Number(data.caseDepartment.selfServeCase.numberOfOOS) || 0) +
-    (Number(data.caseDepartment.frozenDoorsBunkers.numberOfOOS) || 0) +
-    (Number(data.caseDepartment.wetDryRacks.numberOfOOS) || 0) +
-    (Number(data.caseDepartment.fullServiceCase.numberOfOOS) || 0);
-
-  const summaryItems = [
-    `• Store #${data.header.storeNumber || 'N/A'} Seafood department evaluated across all standardized case and food safety criteria.`,
+  const summaryLines = [
     `• Total Recorded Out of Stocks (OOS): ${totalOOS} across Self-Serve, Frozen Doors, Wet/Dry Racks, and Full-Service case.`,
-    `• Clerk Scheduled & Present in Seafood: ${data.caseDepartment.clerkScheduledAndInSeafood === true ? 'Yes' : data.caseDepartment.clerkScheduledAndInSeafood === false ? 'No' : 'Unspecified'}.`,
+    `• Department Clerk Scheduled & Present: ${data.caseDepartment.clerkScheduledAndInSeafood === true ? 'Yes' : data.caseDepartment.clerkScheduledAndInSeafood === false ? 'No' : 'Unspecified'}.`,
     `• Seafood Case Pulled Night Before: ${data.caseDepartment.seafoodCasePulledNightBefore === true ? 'Yes' : data.caseDepartment.seafoodCasePulledNightBefore === false ? 'No' : 'Unspecified'}.`,
-    `• All 5 Required Audit Photographic Records Documented On Subsequent Page.`,
+    `• Inspection Photos: All 5 mandatory case photos captured and logged on the subsequent page.`,
   ];
-
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.2);
   doc.setTextColor(71, 85, 105);
-  summaryItems.forEach((item, idx) => {
-    doc.text(item, leftMargin + 8, checklistBoxY + 11.5 + idx * 5);
+  summaryLines.forEach((line, idx) => {
+    doc.text(line, margin + 6, highlightsY + 10 + idx * 4.2);
   });
 
-  // 5. Formal Auditor Sign-off Box at bottom of page
-  y += mainCardH + 5;
-  const signH = 35;
+  y += notesCardH + 4.5;
+
+  // Electronic Sign-Off & Verification Box
+  const signH = 34;
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(203, 213, 225);
-  doc.roundedRect(leftMargin, y, contentWidth, signH, 2, 2, 'FD');
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, contentWidth, signH, 1.5, 1.5, 'FD');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7.8);
   doc.setTextColor(15, 23, 42);
-  doc.text('ELECTRONIC SIGN-OFF & FIELD VERIFICATION', leftMargin + 6, y + 6);
+  doc.text('ELECTRONIC SIGN-OFF & FIELD VERIFICATION', margin + 5, y + 5.5);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7);
   doc.setTextColor(71, 85, 105);
   doc.text(
-    `This field evaluation report was conducted on-site by ${data.header.merchandiserName?.trim() || 'LusaMerica Merchandiser'} representing Lusamerica Fish for Mountain West Division.`,
-    leftMargin + 6,
-    y + 11.5
+    `This field evaluation was conducted on-site by ${data.header.merchandiserName?.trim() || 'LusaMerica Merchandiser'} for Mountain West Division.`,
+    margin + 5,
+    y + 10.5
   );
 
-  const signLineY = y + 21;
+  const signLineY = y + 20;
   doc.setDrawColor(203, 213, 225);
-  doc.line(leftMargin + 6, signLineY, leftMargin + 85, signLineY);
-  doc.line(leftMargin + 100, signLineY, pageWidth - rightMargin - 6, signLineY);
+  doc.line(margin + 5, signLineY, margin + 85, signLineY);
+  doc.line(margin + 98, signLineY, pageWidth - margin - 5, signLineY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFontSize(6.8);
   doc.setTextColor(100, 116, 139);
-  doc.text('MERCHANDISER SIGNATURE (ELECTRONICALLY LOGGED)', leftMargin + 6, signLineY + 4);
-  doc.text('VERIFICATION DATE & DIVISION CONFIRMATION', leftMargin + 100, signLineY + 4);
+  doc.text('MERCHANDISER ELECTRONIC SIGNATURE', margin + 5, signLineY + 3.8);
+  doc.text('VERIFICATION DATE & DIVISION CONFIRMATION', margin + 98, signLineY + 3.8);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7.8);
   doc.setTextColor(16, 79, 155);
-  doc.text(data.header.merchandiserName?.trim() || 'LusaMerica Merchandiser', leftMargin + 6, signLineY - 2);
-  doc.text(`${data.header.visitDate || new Date().toLocaleDateString()} • Verified`, leftMargin + 100, signLineY - 2);
+  doc.text(data.header.merchandiserName?.trim() || 'LusaMerica Merchandiser', margin + 5, signLineY - 1.8);
+  doc.text(`${data.header.visitDate || new Date().toLocaleDateString()} • Verified`, margin + 98, signLineY - 1.8);
 
-  // Footer text
+  // Seal badge in sign-off card
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(187, 247, 208);
+  doc.roundedRect(pageWidth - margin - 48, y + 3, 43, 6, 0.8, 0.8, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.setTextColor(22, 101, 52);
+  doc.text('✓ DIVISION AUDIT VERIFIED', pageWidth - margin - 26.5, y + 7.1, { align: 'center' });
+
+  // Page 2 Bottom Footer Line
+  const footerY = 267.5;
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.line(margin, footerY, pageWidth - margin, footerY);
+
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184);
+  doc.setTextColor(100, 116, 139);
   doc.text(
-    'Mountain West Division • Merchandising & Food Safety Inspection • Field Notes Sheet',
-    pageWidth / 2,
-    272,
-    { align: 'center' }
+    `Mountain West Division Inspection Document • Store #${data.header.storeNumber || '—'} (District ${data.header.districtNumber || '—'}) • Audited by ${data.header.merchandiserName || 'LusaMerica Merchandiser'}`,
+    margin,
+    footerY + 4
   );
+  doc.text(
+    'Store Audit & Field Notes • Page 2 of 2 (Checklist)',
+    pageWidth - margin,
+    footerY + 4,
+    { align: 'right' }
+  );
+
+  // ==========================================
+  // PAGE 3: REQUIRED AUDIT PHOTO DOCUMENTATION (SINGLE-SHEET GRID)
+  // Follows finally as the last page!
+  // ==========================================
+  renderPhotoGridSheet(doc, data, {
+    headerTitle: `STEP 5: REQUIRED AUDIT PHOTO DOCUMENTATION (STORE #${data.header.storeNumber || '—'})`,
+    headerSubtitle: `5 Mandatory Case Inspection Photos • Single-Sheet Grid Layout`,
+  });
+
+  return doc;
 }
 
 /**

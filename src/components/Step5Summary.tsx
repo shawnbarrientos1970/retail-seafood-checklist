@@ -276,7 +276,7 @@ export const Step5Summary: React.FC<Step5SummaryProps> = ({ data, onReset, onOpe
                   Generate Detailed Report
                 </h4>
                 <p className="text-[11.5px] text-slate-600 mt-1 leading-snug">
-                  Executive audit scorecard, dedicated full-page Field Notes & observations log, and single-page 5-photo grid.
+                  Executive audit scorecard, integrated Field Notes & observations log, and single-page 5-photo grid.
                 </p>
               </div>
 
