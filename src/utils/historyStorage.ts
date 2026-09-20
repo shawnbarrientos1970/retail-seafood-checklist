@@ -1,196 +1,166 @@
-import { ChecklistData, SavedStoreVisit } from '../types';
+import { ChecklistData, SavedVisit } from '../types';
 
-export const VISIT_HISTORY_STORAGE_KEY = 'mwd_store_visit_records_history';
+const VISITS_STORAGE_KEY = 'mwd_saved_store_visits';
 
-/**
- * Calculate summary metrics from ChecklistData
- */
-export function calculateVisitMetrics(data: ChecklistData) {
-  const selfServeOOS = Number(data.caseDepartment.selfServeCase.numberOfOOS) || 0;
-  const frozenDoorsOOS = Number(data.caseDepartment.frozenDoorsBunkers.numberOfOOS) || 0;
-  const wetDryOOS = Number(data.caseDepartment.wetDryRacks.numberOfOOS) || 0;
-  const fullServeOOS = Number(data.caseDepartment.fullServiceCase.numberOfOOS) || 0;
-  const totalOOS = selfServeOOS + frozenDoorsOOS + wetDryOOS + fullServeOOS;
+export function calculateAuditStats(data: ChecklistData) {
+  let passed = 0;
+  let failed = 0;
+  let na = 0;
 
-  // Checklist items
-  const caseValues = [
+  // Case department items:
+  const deptBooleans = [
     data.caseDepartment.clerkScheduledAndInSeafood,
     data.caseDepartment.seafoodCasePulledNightBefore,
     data.caseDepartment.seafoodCaseCleanOdorFree,
     data.caseDepartment.taresDoneDaily,
     data.caseDepartment.deliveriesCheckedInvoice,
     data.caseDepartment.regulatoryDecalsAllergens,
+    data.caseDepartment.perishableLinkUsed,
+    // selfServe
     data.caseDepartment.selfServeCase.faced,
     data.caseDepartment.selfServeCase.tagged,
     data.caseDepartment.selfServeCase.setToSchematic,
     data.caseDepartment.selfServeCase.culledRotated,
     data.caseDepartment.selfServeCase.properlyMarkedDown,
+    // frozen
     data.caseDepartment.frozenDoorsBunkers.setToSchematic,
     data.caseDepartment.frozenDoorsBunkers.facedAndTagged,
+    // wet dry
     data.caseDepartment.wetDryRacks.faced,
     data.caseDepartment.wetDryRacks.tagged,
     data.caseDepartment.wetDryRacks.setToSchematic,
+    // full service
     data.caseDepartment.fullServiceCase.setToSchematic,
     data.caseDepartment.fullServiceCase.properDividers,
     data.caseDepartment.fullServiceCase.correctSluCool,
     data.caseDepartment.fullServiceCase.cookedShrimpDated,
     data.caseDepartment.fullServiceCase.shellfishHarvestTags90Days,
-    data.caseDepartment.perishableLinkUsed,
   ];
 
-  const complianceValues = Object.values(data.compliance);
-  const allValues = [...caseValues, ...complianceValues];
+  deptBooleans.forEach((val) => {
+    if (val === true) passed++;
+    else if (val === false) failed++;
+    else na++;
+  });
 
-  const complianceYes = allValues.filter((v) => v === true).length;
-  const complianceNo = allValues.filter((v) => v === false).length;
-  const complianceBlank = allValues.filter((v) => v === null).length;
+  // Compliance items:
+  const complianceBooleans = [
+    data.compliance.adSupport,
+    data.compliance.coolersFreezersOrganizedDated,
+    data.compliance.temperatureChecks,
+    data.compliance.salesPurchasesTrackingReviewed,
+    data.compliance.form120Submitted,
+    data.compliance.visionProScannedProductionList,
+    data.compliance.schematicIntegrityOnline,
+    data.compliance.newProgramBulletinMeatSeafood,
+    data.compliance.foodSafetyHandlingDatingPolicy,
+    data.compliance.markDownProcedures,
+  ];
 
-  const photosCount = Object.values(data.photos).filter((p) => Boolean(p)).length;
+  complianceBooleans.forEach((val) => {
+    if (val === true) passed++;
+    else if (val === false) failed++;
+    else na++;
+  });
+
+  const totalAnswered = passed + failed;
+  const scorePercent = totalAnswered > 0 ? Math.round((passed / totalAnswered) * 100) : 100;
+
+  const totalOOS =
+    (data.caseDepartment.selfServeCase.numberOfOOS || 0) +
+    (data.caseDepartment.frozenDoorsBunkers.numberOfOOS || 0) +
+    (data.caseDepartment.wetDryRacks.numberOfOOS || 0) +
+    (data.caseDepartment.fullServiceCase.numberOfOOS || 0);
 
   return {
+    passed,
+    failed,
+    na,
+    totalAnswered,
+    scorePercent,
     totalOOS,
-    complianceYes,
-    complianceNo,
-    complianceBlank,
-    photosCount,
   };
 }
 
-/**
- * Read all saved visits from localStorage
- */
-export function getSavedVisits(): SavedStoreVisit[] {
+export function getSavedVisits(): SavedVisit[] {
   try {
-    const raw = localStorage.getItem(VISIT_HISTORY_STORAGE_KEY);
+    const raw = localStorage.getItem(VISITS_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      // Sort most recent first
-      return parsed.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+      return parsed;
     }
+    return [];
   } catch (err) {
-    console.warn('Failed to load store visit history from localStorage:', err);
+    console.warn('Error reading saved visits from localStorage:', err);
+    return [];
   }
-  return [];
 }
 
-/**
- * Save or update a store visit in history
- */
-export function saveVisitToHistory(data: ChecklistData, existingId?: string): {
-  success: boolean;
-  visit: SavedStoreVisit;
-  error?: string;
-} {
-  const metrics = calculateVisitMetrics(data);
-  const now = new Date();
-  const formattedDate = now.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+export function saveVisit(data: ChecklistData): SavedVisit {
+  const stats = calculateAuditStats(data);
+  const visits = getSavedVisits();
 
-  const storeNum = data.header.storeNumber.trim() || 'Unknown';
-  const id = existingId || `visit_${Date.now()}_${storeNum.replace(/\s+/g, '_')}`;
-
-  const visitRecord: SavedStoreVisit = {
-    id,
-    savedAt: now.toISOString(),
-    formattedDate,
-    storeNumber: storeNum,
-    districtNumber: data.header.districtNumber.trim() || '—',
-    visitDate: data.header.visitDate || now.toISOString().split('T')[0],
-    merchandiserName: data.header.merchandiserName.trim() || '—',
-    totalOOS: metrics.totalOOS,
-    complianceYes: metrics.complianceYes,
-    complianceNo: metrics.complianceNo,
-    photosCount: metrics.photosCount,
-    generalNotesSnippet: data.generalNotes.trim().slice(0, 120),
-    data: JSON.parse(JSON.stringify(data)), // deep copy
+  // Strip or downscale photo data if localStorage is near quota
+  const visitToSave: SavedVisit = {
+    id: `visit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    timestamp: Date.now(),
+    storeNumber: data.header.storeNumber || 'N/A',
+    districtNumber: data.header.districtNumber || 'N/A',
+    visitDate: data.header.visitDate || new Date().toISOString().split('T')[0],
+    merchandiserName: data.header.merchandiserName || 'Merchandiser',
+    totalScore: stats.scorePercent,
+    totalItemsChecked: stats.totalAnswered,
+    passedCount: stats.passed,
+    failedCount: stats.failed,
+    totalOOS: stats.totalOOS,
+    data: JSON.parse(JSON.stringify(data)),
   };
 
-  const currentList = getSavedVisits();
-  const existingIndex = currentList.findIndex((item) => item.id === id);
+  const updated = [visitToSave, ...visits];
 
-  let updatedList: SavedStoreVisit[];
-  if (existingIndex >= 0) {
-    updatedList = [...currentList];
-    updatedList[existingIndex] = visitRecord;
-  } else {
-    // If there's an existing record with the same storeNumber and visitDate, update it instead of creating duplicates
-    const sameStoreAndDateIdx = currentList.findIndex(
-      (item) => item.storeNumber === storeNum && item.visitDate === visitRecord.visitDate
-    );
-    if (sameStoreAndDateIdx >= 0) {
-      updatedList = [...currentList];
-      visitRecord.id = currentList[sameStoreAndDateIdx].id;
-      updatedList[sameStoreAndDateIdx] = visitRecord;
-    } else {
-      updatedList = [visitRecord, ...currentList];
-    }
-  }
-
-  // Attempt to write to localStorage, with quota error fallback
   try {
-    localStorage.setItem(VISIT_HISTORY_STORAGE_KEY, JSON.stringify(updatedList));
-    return { success: true, visit: visitRecord };
+    localStorage.setItem(VISITS_STORAGE_KEY, JSON.stringify(updated));
   } catch (err) {
-    console.warn('LocalStorage full, attempting quota fallback by trimming oldest photo attachments:', err);
-
-    // Fallback: reduce photos in older visits to save space
+    // If quota exceeded, strip photos and try again
+    console.warn('Quota exceeded when saving visit, stripping heavy photos...');
     try {
-      const streamlined = updatedList.map((item, index) => {
-        if (index === 0) return item; // keep full data on most recent
-        return {
-          ...item,
-          data: {
-            ...item.data,
-            photos: {
-              coolerFreezer: null,
-              selfServe: null,
-              fullServe: null,
-              frozenDoorsBunkers: null,
-              spiceRacks: null,
-            },
+      const lightweightVisits = updated.map((v) => ({
+        ...v,
+        data: {
+          ...v.data,
+          photos: {
+            coolerFreezer: null,
+            selfServe: null,
+            fullServe: null,
+            frozenDoorsBunkers: null,
+            spiceRacks: null,
           },
-        };
-      });
-      localStorage.setItem(VISIT_HISTORY_STORAGE_KEY, JSON.stringify(streamlined));
-      return { success: true, visit: visitRecord };
-    } catch (secondErr) {
-      console.error('Failed to save visit record to localStorage:', secondErr);
-      return {
-        success: false,
-        visit: visitRecord,
-        error: 'Storage limit reached on device. Please clear older records.',
-      };
+        },
+      }));
+      localStorage.setItem(VISITS_STORAGE_KEY, JSON.stringify(lightweightVisits));
+    } catch (fallbackErr) {
+      console.error('Failed to save visit to localStorage:', fallbackErr);
     }
   }
+
+  return visitToSave;
 }
 
-/**
- * Delete a specific record from history
- */
-export function deleteVisitFromHistory(id: string): SavedStoreVisit[] {
-  const currentList = getSavedVisits();
-  const updated = currentList.filter((item) => item.id !== id);
+export function deleteVisit(id: string): void {
   try {
-    localStorage.setItem(VISIT_HISTORY_STORAGE_KEY, JSON.stringify(updated));
+    const visits = getSavedVisits();
+    const filtered = visits.filter((v) => v.id !== id);
+    localStorage.setItem(VISITS_STORAGE_KEY, JSON.stringify(filtered));
   } catch (err) {
-    console.error('Failed to delete visit record:', err);
+    console.warn('Error deleting visit from localStorage:', err);
   }
-  return updated;
 }
 
-/**
- * Clear all history records
- */
-export function clearAllVisitsHistory(): void {
+export function clearAllVisits(): void {
   try {
-    localStorage.removeItem(VISIT_HISTORY_STORAGE_KEY);
+    localStorage.removeItem(VISITS_STORAGE_KEY);
   } catch (err) {
-    console.error('Failed to clear visit history:', err);
+    console.warn('Error clearing visits:', err);
   }
 }

@@ -1,41 +1,41 @@
-export interface HeaderInfo {
+export interface StoreHeader {
   districtNumber: string;
   storeNumber: string;
   visitDate: string;
   merchandiserName: string;
 }
 
-export type YesNoValue = boolean | null;
-
-export interface SelfServeCaseChecks {
+export interface SelfServeCaseCheck {
   faced: boolean | null;
   tagged: boolean | null;
   setToSchematic: boolean | null;
-  numberOfOOS: number | '';
-  oosNotes?: string;
+  numberOfOOS: number;
+  oosNotes: string;
   culledRotated: boolean | null;
   properlyMarkedDown: boolean | null;
 }
 
-export interface FrozenDoorsChecks {
+export interface FrozenDoorsBunkersCheck {
   setToSchematic: boolean | null;
-  numberOfOOS: number | '';
-  oosNotes?: string;
+  numberOfOOS: number;
+  oosDoors?: number;
+  oosBunkers?: number;
+  oosNotes: string;
   facedAndTagged: boolean | null;
 }
 
-export interface WetDryRacksChecks {
+export interface WetDryRacksCheck {
   faced: boolean | null;
   tagged: boolean | null;
   setToSchematic: boolean | null;
-  numberOfOOS: number | '';
-  oosNotes?: string;
+  numberOfOOS: number;
+  oosNotes: string;
 }
 
-export interface FullServiceCaseChecks {
+export interface FullServiceCaseCheck {
   setToSchematic: boolean | null;
-  numberOfOOS: number | '';
-  oosNotes?: string;
+  numberOfOOS: number;
+  oosNotes: string;
   properDividers: boolean | null;
   correctSluCool: boolean | null;
   cookedShrimpDated: boolean | null;
@@ -49,14 +49,17 @@ export interface CaseDepartmentChecks {
   taresDoneDaily: boolean | null;
   deliveriesCheckedInvoice: boolean | null;
   regulatoryDecalsAllergens: boolean | null;
-  selfServeCase: SelfServeCaseChecks;
-  frozenDoorsBunkers: FrozenDoorsChecks;
-  wetDryRacks: WetDryRacksChecks;
-  fullServiceCase: FullServiceCaseChecks;
+  decalsAllergens?: boolean | null;
+  decalsColorAdded?: boolean | null;
+  decalsConsumerAdvisory?: boolean | null;
+  selfServeCase: SelfServeCaseCheck;
+  frozenDoorsBunkers: FrozenDoorsBunkersCheck;
+  wetDryRacks: WetDryRacksCheck;
+  fullServiceCase: FullServiceCaseCheck;
   perishableLinkUsed: boolean | null;
 }
 
-export interface ComplianceTrainingChecks {
+export interface ComplianceChecks {
   adSupport: boolean | null;
   coolersFreezersOrganizedDated: boolean | null;
   temperatureChecks: boolean | null;
@@ -69,7 +72,9 @@ export interface ComplianceTrainingChecks {
   markDownProcedures: boolean | null;
 }
 
-export interface PhotoCaptureData {
+export type PhotoSlot = 'coolerFreezer' | 'selfServe' | 'fullServe' | 'frozenDoorsBunkers' | 'spiceRacks';
+
+export interface PhotoData {
   coolerFreezer: string | null;
   selfServe: string | null;
   fullServe: string | null;
@@ -78,26 +83,24 @@ export interface PhotoCaptureData {
 }
 
 export interface ChecklistData {
-  header: HeaderInfo;
+  header: StoreHeader;
   caseDepartment: CaseDepartmentChecks;
-  compliance: ComplianceTrainingChecks;
-  photos: PhotoCaptureData;
+  compliance: ComplianceChecks;
+  photos: PhotoData;
   generalNotes: string;
 }
 
-export interface SavedStoreVisit {
+export interface SavedVisit {
   id: string;
-  savedAt: string;
-  formattedDate: string;
+  timestamp: number;
   storeNumber: string;
   districtNumber: string;
   visitDate: string;
   merchandiserName: string;
+  totalScore: number;
+  totalItemsChecked: number;
+  passedCount: number;
+  failedCount: number;
   totalOOS: number;
-  complianceYes: number;
-  complianceNo: number;
-  photosCount: number;
-  generalNotesSnippet: string;
   data: ChecklistData;
 }
-

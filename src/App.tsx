@@ -107,6 +107,7 @@ export default function App() {
     }
     return 1;
   });
+
   const totalSteps = 5;
 
   const [data, setData] = useState<ChecklistData>(() => {
@@ -171,7 +172,6 @@ export default function App() {
     } catch (e) {
       console.warn('Failed to restore form state from localStorage:', e);
     }
-
     return {
       ...initialData,
       header: {
@@ -198,13 +198,11 @@ export default function App() {
     type: 'simple',
   });
 
-  // Automatically save form state to localStorage every time an input changes
   useEffect(() => {
     try {
       localStorage.setItem(FORM_AUTOSAVE_KEY, JSON.stringify(data));
       setIsSaved(true);
     } catch (err) {
-      // If photo storage quota is exceeded, safely preserve all textual & check inputs
       try {
         const dataWithoutPhotos = { ...data, photos: initialData.photos };
         localStorage.setItem(FORM_AUTOSAVE_KEY, JSON.stringify(dataWithoutPhotos));
@@ -215,7 +213,6 @@ export default function App() {
     }
   }, [data]);
 
-  // Persist current wizard step to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STEP_AUTOSAVE_KEY, String(currentStep));
@@ -224,12 +221,10 @@ export default function App() {
     }
   }, [currentStep]);
 
-  // Scroll to top on step change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
-  // Step 1 Validation
   const validateStep1 = (): boolean => {
     const errors: Record<string, string> = {};
     if (!data.header.districtNumber.trim()) {
@@ -241,7 +236,6 @@ export default function App() {
     if (!data.header.merchandiserName.trim()) {
       errors.merchandiserName = 'Please enter Merchandiser Name';
     }
-
     setHeaderErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -289,7 +283,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
-      {/* Top Mobile Division Bar */}
       <header className="sticky top-0 z-40 bg-[#091b34] text-white border-b border-blue-950/80 pt-safe no-print shadow-sm">
         <div className="max-w-md mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -302,7 +295,6 @@ export default function App() {
               <span>Auto-saved</span>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
             {data.header.storeNumber && (
               <div className="hidden sm:block px-2.5 py-1 rounded-md bg-blue-900/60 border border-blue-700/60 text-[11px] font-mono font-bold text-sky-200">
@@ -339,8 +331,6 @@ export default function App() {
             </button>
           </div>
         </div>
-
-        {/* Progress Step Indicator */}
         <div className="max-w-md mx-auto">
           <StepIndicator
             currentStep={currentStep}
@@ -350,7 +340,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content Area (iPhone scrollable viewport with safe area clearance) */}
       <main className="flex-1 max-w-md w-full mx-auto p-4 main-safe pb-[max(8.5rem,calc(8.5rem+env(safe-area-inset-bottom,0px)))]">
         {currentStep === 1 && (
           <Step1Header
@@ -360,7 +349,6 @@ export default function App() {
                 ...prev,
                 header: { ...prev.header, ...updated },
               }));
-              // Clear error if user typed
               setHeaderErrors((prev) => {
                 const next = { ...prev };
                 Object.keys(updated).forEach((k) => delete next[k]);
@@ -370,7 +358,6 @@ export default function App() {
             errors={headerErrors}
           />
         )}
-
         {currentStep === 2 && (
           <Step2CaseChecks
             data={data.caseDepartment}
@@ -382,7 +369,6 @@ export default function App() {
             }}
           />
         )}
-
         {currentStep === 3 && (
           <Step3Compliance
             data={data.compliance}
@@ -394,7 +380,6 @@ export default function App() {
             }}
           />
         )}
-
         {currentStep === 4 && (
           <Step4PhotosNotes
             photos={data.photos}
@@ -416,7 +401,6 @@ export default function App() {
             }}
           />
         )}
-
         {currentStep === 5 && (
           <Step5Summary
             data={data}
@@ -429,7 +413,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Bottom Sticky Action Bar (iPhone-friendly touch bar with safe-area-inset-bottom) */}
       <nav
         aria-label="Wizard navigation"
         style={{
@@ -438,7 +421,6 @@ export default function App() {
         className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 pt-3 fixed-footer-safe no-print shadow-lg"
       >
         <div className="max-w-md mx-auto flex items-center gap-3">
-          {/* Previous Button */}
           {currentStep > 1 && (
             <button
               type="button"
@@ -450,8 +432,6 @@ export default function App() {
               <span>Back</span>
             </button>
           )}
-
-          {/* Next Button or Final Step Action */}
           {currentStep < totalSteps ? (
             <button
               type="button"
@@ -476,9 +456,16 @@ export default function App() {
               <button
                 type="button"
                 id="wizard-quick-preview-btn"
-                onClick={() => setAppPreviewModal({ isOpen: true, type: 'simple' })}
+                onClick={async () => {
+                  try {
+                    await generateStoreVisitPDF(data, 'simple', true);
+                  } catch (err) {
+                    console.error('Failed to download PDF before preview:', err);
+                  }
+                  setAppPreviewModal({ isOpen: true, type: 'simple' });
+                }}
                 className="min-h-[48px] px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 font-semibold text-xs text-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                title="Preview and download report"
+                title="Download and preview report"
               >
                 <Eye className="w-4 h-4 text-[#104f9b]" />
                 <span>Preview</span>
@@ -488,7 +475,6 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 pb-[max(1rem,calc(1rem+env(safe-area-inset-bottom,0px)))] backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-xs w-full p-5 text-center shadow-xl space-y-4">
@@ -521,7 +507,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Local Store Visit History Modal */}
       <VisitHistoryModal
         isOpen={showHistoryModal}
         onClose={() => {
@@ -539,7 +524,6 @@ export default function App() {
         }}
       />
 
-      {/* Historical Report PDF Print & Preview Modal */}
       {historyPdfPreviewData && (
         <PdfPreviewModal
           isOpen={Boolean(historyPdfPreviewData)}
@@ -548,7 +532,6 @@ export default function App() {
         />
       )}
 
-      {/* Active Wizard Report Preview Modal */}
       <PdfPreviewModal
         isOpen={appPreviewModal.isOpen}
         onClose={() => setAppPreviewModal((prev) => ({ ...prev, isOpen: false }))}

@@ -1,919 +1,651 @@
 import React from 'react';
-import { CaseDepartmentChecks, YesNoValue } from '../types';
-import { Minus, Plus, Fish, Layers, Snowflake, Sparkles, ClipboardList } from 'lucide-react';
-import { YesNoToggle } from './YesNoToggle';
+import { CaseDepartmentChecks } from '../types';
+import { Check, X, Ban, Plus, Minus, Layers, Fish, Sparkles, Snowflake, Package, ShieldAlert } from 'lucide-react';
 
 interface Step2CaseChecksProps {
   data: CaseDepartmentChecks;
   onChange: (updater: (prev: CaseDepartmentChecks) => CaseDepartmentChecks) => void;
 }
 
-export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange }) => {
-  const setTopLevelField = (
-    field: keyof Omit<CaseDepartmentChecks, 'selfServeCase' | 'frozenDoorsBunkers' | 'wetDryRacks' | 'fullServiceCase'>,
-    value: YesNoValue
-  ) => {
-    onChange((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+interface TriToggleProps {
+  idPrefix: string;
+  label: string;
+  subtitle?: string;
+  value: boolean | null;
+  onChange: (val: boolean | null) => void;
+  allowNA?: boolean;
+}
 
-  const updateSelfServe = (field: keyof CaseDepartmentChecks['selfServeCase'], value: any) => {
-    onChange((prev) => ({
-      ...prev,
-      selfServeCase: {
-        ...prev.selfServeCase,
-        [field]: value,
-      },
-    }));
-  };
-
-  const updateFrozenDoors = (field: keyof CaseDepartmentChecks['frozenDoorsBunkers'], value: any) => {
-    onChange((prev) => ({
-      ...prev,
-      frozenDoorsBunkers: {
-        ...prev.frozenDoorsBunkers,
-        [field]: value,
-      },
-    }));
-  };
-
-  const updateWetDryRacks = (field: keyof CaseDepartmentChecks['wetDryRacks'], value: any) => {
-    onChange((prev) => ({
-      ...prev,
-      wetDryRacks: {
-        ...prev.wetDryRacks,
-        [field]: value,
-      },
-    }));
-  };
-
-  const updateFullService = (field: keyof CaseDepartmentChecks['fullServiceCase'], value: any) => {
-    onChange((prev) => ({
-      ...prev,
-      fullServiceCase: {
-        ...prev.fullServiceCase,
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleOOSStepper = (
-    currentVal: number | '',
-    setter: (val: number | '') => void,
-    delta: number
-  ) => {
-    const current = currentVal === '' ? 0 : Number(currentVal);
-    const updated = Math.max(0, current + delta);
-    setter(updated);
-  };
-
-  const isOOSActive = (val: number | '' | undefined): boolean => {
-    if (typeof val === 'number') return !isNaN(val) && val >= 1;
-    if (!val) return false;
-    const num = parseInt(val, 10);
-    return !isNaN(num) && num >= 1;
-  };
-
-  const allCheckValues: YesNoValue[] = [
-    data.clerkScheduledAndInSeafood,
-    data.seafoodCasePulledNightBefore,
-    data.seafoodCaseCleanOdorFree,
-    data.taresDoneDaily,
-    data.deliveriesCheckedInvoice,
-    data.regulatoryDecalsAllergens,
-    data.perishableLinkUsed,
-    data.selfServeCase.faced,
-    data.selfServeCase.tagged,
-    data.selfServeCase.setToSchematic,
-    data.selfServeCase.culledRotated,
-    data.selfServeCase.properlyMarkedDown,
-    data.frozenDoorsBunkers.setToSchematic,
-    data.frozenDoorsBunkers.facedAndTagged,
-    data.wetDryRacks.faced,
-    data.wetDryRacks.tagged,
-    data.wetDryRacks.setToSchematic,
-    data.fullServiceCase.setToSchematic,
-    data.fullServiceCase.properDividers,
-    data.fullServiceCase.correctSluCool,
-    data.fullServiceCase.cookedShrimpDated,
-    data.fullServiceCase.shellfishHarvestTags90Days,
-  ];
-
-  const totalYes = allCheckValues.filter((v) => v === true).length;
-  const totalNo = allCheckValues.filter((v) => v === false).length;
-  const totalEvaluated = allCheckValues.filter((v) => v !== null && v !== undefined).length;
-  const totalCriteria = allCheckValues.length;
-
-  const handleClearAll = () => {
-    onChange((prev) => ({
-      ...prev,
-      clerkScheduledAndInSeafood: null,
-      seafoodCasePulledNightBefore: null,
-      seafoodCaseCleanOdorFree: null,
-      taresDoneDaily: null,
-      deliveriesCheckedInvoice: null,
-      regulatoryDecalsAllergens: null,
-      perishableLinkUsed: null,
-      selfServeCase: {
-        ...prev.selfServeCase,
-        faced: null,
-        tagged: null,
-        setToSchematic: null,
-        culledRotated: null,
-        properlyMarkedDown: null,
-      },
-      frozenDoorsBunkers: {
-        ...prev.frozenDoorsBunkers,
-        setToSchematic: null,
-        facedAndTagged: null,
-      },
-      wetDryRacks: {
-        ...prev.wetDryRacks,
-        faced: null,
-        tagged: null,
-        setToSchematic: null,
-      },
-      fullServiceCase: {
-        ...prev.fullServiceCase,
-        setToSchematic: null,
-        properDividers: null,
-        correctSluCool: null,
-        cookedShrimpDated: null,
-        shellfishHarvestTags90Days: null,
-      },
-    }));
-  };
-
+const TriToggle: React.FC<TriToggleProps> = ({
+  idPrefix,
+  label,
+  subtitle,
+  value,
+  onChange,
+}) => {
   return (
-    <div id="step-2-container" className="space-y-4">
-      {/* Section Introduction */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#104f9b] text-white flex items-center justify-center font-bold text-sm shadow-xs">
-              2
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg">Case & Department Checks</h3>
-              <p className="text-xs text-slate-500">
-                Mountain West Division seafood and merchandised case standards
-              </p>
-            </div>
+    <div className="py-2.5 border-b border-slate-100 last:border-b-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="flex-1 pr-2">
+        <div className="text-xs font-semibold text-slate-800 leading-snug">{label}</div>
+        {subtitle && <div className="text-[11px] text-slate-500 mt-0.5">{subtitle}</div>}
+      </div>
+      <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0">
+        <button
+          type="button"
+          id={`${idPrefix}-yes`}
+          onClick={() => onChange(true)}
+          className={`min-h-[44px] min-w-[58px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+            value === true
+              ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400/40'
+              : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 active:bg-slate-200'
+          }`}
+        >
+          <Check className="w-3.5 h-3.5" />
+          <span>Yes</span>
+        </button>
+
+        <button
+          type="button"
+          id={`${idPrefix}-no`}
+          onClick={() => onChange(false)}
+          className={`min-h-[44px] min-w-[58px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+            value === false
+              ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-400/40'
+              : 'bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700 active:bg-slate-200'
+          }`}
+        >
+          <X className="w-3.5 h-3.5" />
+          <span>No</span>
+        </button>
+
+        <button
+          type="button"
+          id={`${idPrefix}-blank`}
+          onClick={() => onChange(null)}
+          className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-medium flex items-center justify-center transition-all cursor-pointer ${
+            value === null
+              ? 'bg-slate-200 text-slate-800 font-semibold ring-1 ring-slate-300'
+              : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 active:bg-slate-200'
+          }`}
+          title="Leave blank / Unanswered"
+        >
+          <span className="text-[11px]">Leave Blank</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+interface OosCounterProps {
+  idPrefix: string;
+  count: number;
+  notes: string;
+  onCountChange: (cnt: number) => void;
+  onNotesChange: (notes: string) => void;
+  label?: string;
+}
+
+const OosCounter: React.FC<OosCounterProps> = ({
+  idPrefix,
+  count,
+  notes,
+  onCountChange,
+  onNotesChange,
+  label = 'Out of Stocks (OOS)',
+}) => {
+  return (
+    <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-slate-800">{label}:</span>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            id={`${idPrefix}-dec`}
+            onClick={() => onCountChange(Math.max(0, count - 1))}
+            className="min-h-[44px] min-w-[44px] rounded-xl bg-white border border-slate-300 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-transform cursor-pointer shadow-2xs"
+            aria-label="Decrease out of stock count"
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+          <input
+            type="number"
+            min="0"
+            inputMode="numeric"
+            id={`${idPrefix}-input`}
+            value={count}
+            onChange={(e) => onCountChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
+            className="w-14 h-11 text-center text-sm font-bold bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-hidden focus:border-[#104f9b] focus:ring-1 focus:ring-blue-200"
+          />
+          <button
+            type="button"
+            id={`${idPrefix}-inc`}
+            onClick={() => onCountChange(count + 1)}
+            className="min-h-[44px] min-w-[44px] rounded-xl bg-white border border-slate-300 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-transform cursor-pointer shadow-2xs"
+            aria-label="Increase out of stock count"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      {count > 0 && (
+        <div className="space-y-1">
+          <label htmlFor={`${idPrefix}-notes`} className="text-[11px] font-bold text-amber-800 flex items-center gap-1">
+            <span>Specific Missing Items:</span>
+            <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            id={`${idPrefix}-notes`}
+            placeholder="e.g. Sockeye fillets, cooked tail-on 26/30, cocktail sauce..."
+            value={notes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            className="w-full min-h-[44px] px-3 rounded-xl border border-amber-300 bg-amber-50/50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#104f9b] focus:ring-1 focus:ring-blue-200"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const Step2CaseChecks: React.FC<Step2CaseChecksProps> = ({ data, onChange }) => {
+  return (
+    <div className="space-y-4">
+      {/* Department Operations Header */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#104f9b] flex items-center justify-center">
+            <Fish className="w-4 h-4" />
           </div>
-          <div className="text-right flex items-center gap-1.5 flex-wrap justify-end">
-            {totalYes > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                {totalYes} YES
-              </span>
-            )}
-            {totalNo > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
-                {totalNo} NO
-              </span>
-            )}
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
-              {totalEvaluated}/{totalCriteria} Checked
-            </span>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Seafood Operations & Clerks</h2>
+            <p className="text-[11px] text-slate-500">Daily standards, tares, deliveries & sanitation</p>
           </div>
         </div>
 
-        {/* Individual Verification Notice & Clear Option */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
-          <span className="text-slate-500 italic">
-            Select YES, NO, or Leave Blank for each standard during store walk
-          </span>
-          {totalEvaluated > 0 && (
-            <button
-              type="button"
-              onClick={handleClearAll}
-              className="min-h-[44px] py-2 px-3 text-xs font-semibold rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 transition-colors flex items-center justify-center cursor-pointer"
-            >
-              Clear Section
-            </button>
-          )}
+        <div className="divide-y divide-slate-100">
+          <TriToggle
+            idPrefix="dept-clerk"
+            label="Clerk Scheduled & Working in Seafood"
+            subtitle="Coverage verified and team member active at the counter"
+            value={data.clerkScheduledAndInSeafood}
+            onChange={(val) =>
+              onChange((prev) => ({ ...prev, clerkScheduledAndInSeafood: val }))
+            }
+          />
+          <TriToggle
+            idPrefix="dept-pulled"
+            label="Seafood Case Pulled Night Before"
+            subtitle="Full case pull procedure executed prior evening"
+            value={data.seafoodCasePulledNightBefore}
+            onChange={(val) =>
+              onChange((prev) => ({ ...prev, seafoodCasePulledNightBefore: val }))
+            }
+          />
+          <TriToggle
+            idPrefix="dept-clean"
+            label="Seafood Case Clean & Odor Free"
+            subtitle="Glass, trays, ice bed, drains and floor behind counter clean"
+            value={data.seafoodCaseCleanOdorFree}
+            onChange={(val) =>
+              onChange((prev) => ({ ...prev, seafoodCaseCleanOdorFree: val }))
+            }
+          />
+          <TriToggle
+            idPrefix="dept-tares"
+            label="Scale Tares Completed Daily"
+            subtitle="Verified tare weight recorded for packaging and bags"
+            value={data.taresDoneDaily}
+            onChange={(val) =>
+              onChange((prev) => ({ ...prev, taresDoneDaily: val }))
+            }
+          />
+          <TriToggle
+            idPrefix="dept-deliveries"
+            label="Deliveries Checked Against Invoice"
+            subtitle="Counts, weights, catch dates, and temperatures verified"
+            value={data.deliveriesCheckedInvoice}
+            onChange={(val) =>
+              onChange((prev) => ({ ...prev, deliveriesCheckedInvoice: val }))
+            }
+          />
+          <TriToggle
+            idPrefix="dept-allergens"
+            label="Regulatory Decals (Check Missing Decals)"
+            subtitle="COOL country of origin labels, shellfish warnings & decals"
+            value={data.regulatoryDecalsAllergens}
+            onChange={(val) =>
+              onChange((prev) => ({ ...prev, regulatoryDecalsAllergens: val }))
+            }
+          />
+          {/* Missing Decals Detail Checklist */}
+          <div className="py-2.5 px-3 bg-slate-50/80 rounded-xl border border-slate-200/60 my-1">
+            <span className="text-[11px] font-bold text-slate-700 block mb-1.5">Specific Decal Status:</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { key: 'decalsAllergens', label: 'Allergens', val: data.decalsAllergens },
+                { key: 'decalsColorAdded', label: 'Color Added', val: data.decalsColorAdded },
+                { key: 'decalsConsumerAdvisory', label: 'Consumer Advisory', val: data.decalsConsumerAdvisory },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between p-1.5 bg-white rounded-lg border border-slate-200">
+                  <span className="text-xs text-slate-800 font-medium">{item.label}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onChange((prev) => ({ ...prev, [item.key]: prev[item.key as keyof typeof prev] === true ? null : true }))
+                      }
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${
+                        item.val === true ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      Y
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onChange((prev) => ({ ...prev, [item.key]: prev[item.key as keyof typeof prev] === false ? null : false }))
+                      }
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${
+                        item.val === false ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      N
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <TriToggle
+            idPrefix="dept-perishable"
+            label="Perishable Link Tool Used"
+            subtitle="Inventory tracking & daily log updated"
+            value={data.perishableLinkUsed}
+            onChange={(val) =>
+              onChange((prev) => ({ ...prev, perishableLinkUsed: val }))
+            }
+          />
         </div>
       </div>
 
-      {/* General Department & Case Operations */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
-          <Fish className="w-4 h-4 text-[#104f9b]" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-            Department Operations & Readiness
-          </h4>
-        </div>
-
-        {/* 1. Clerk Scheduled */}
-        <div
-          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            data.clerkScheduledAndInSeafood === true
-              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-              : data.clerkScheduledAndInSeafood === false
-              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex-1 min-w-0 pr-1">
-            <div className="text-sm font-semibold text-slate-900">
-              Clerk Scheduled And In Seafood Department
-            </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              Coverage verified for department operational hours
-            </div>
+      {/* Full Service Case */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
+            <Layers className="w-4 h-4" />
           </div>
-          <div className="shrink-0 self-end sm:self-center">
-            <YesNoToggle
-              value={data.clerkScheduledAndInSeafood}
-              onChange={(val) => setTopLevelField('clerkScheduledAndInSeafood', val)}
-              idPrefix="check-clerk-scheduled"
-              ariaLabel="Clerk Scheduled And In Seafood Department"
-            />
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Full Service Seafood Case</h2>
+            <p className="text-[11px] text-slate-500">Service counter presentation & food safety</p>
           </div>
         </div>
 
-        {/* 2. Seafood Case Pulled Night Before */}
-        <div
-          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            data.seafoodCasePulledNightBefore === true
-              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-              : data.seafoodCasePulledNightBefore === false
-              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex-1 min-w-0 pr-1">
-            <div className="text-sm font-semibold text-slate-900">
-              Seafood Case Pulled Night Before
-            </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              Case pulled, iced down, or covered per division closing policy
-            </div>
-          </div>
-          <div className="shrink-0 self-end sm:self-center">
-            <YesNoToggle
-              value={data.seafoodCasePulledNightBefore}
-              onChange={(val) => setTopLevelField('seafoodCasePulledNightBefore', val)}
-              idPrefix="check-seafood-pulled"
-              ariaLabel="Seafood Case Pulled Night Before"
-            />
-          </div>
+        <div className="divide-y divide-slate-100">
+          <TriToggle
+            idPrefix="fs-schematic"
+            label="Set to Division Schematic"
+            subtitle="Merchandised according to seasonal fish schematic plan"
+            value={data.fullServiceCase.setToSchematic}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                fullServiceCase: { ...prev.fullServiceCase, setToSchematic: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="fs-dividers"
+            label="Proper Dividers Between Species"
+            subtitle="Greens/dividers preventing cross-contact between raw & cooked"
+            value={data.fullServiceCase.properDividers}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                fullServiceCase: { ...prev.fullServiceCase, properDividers: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="fs-slucool"
+            label="Correct SLU & COOL Tags Displayed"
+            subtitle="Prices, species, wild vs farm-raised, country of origin"
+            value={data.fullServiceCase.correctSluCool}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                fullServiceCase: { ...prev.fullServiceCase, correctSluCool: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="fs-cookedshrimp"
+            label="Cooked Shrimp Rotated & Dated"
+            subtitle="Separated from raw seafood with proper expiration tags"
+            value={data.fullServiceCase.cookedShrimpDated}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                fullServiceCase: { ...prev.fullServiceCase, cookedShrimpDated: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="fs-shellfishtags"
+            label="Shellfish Harvest Tags Kept 90 Days"
+            subtitle="Oysters, mussels, clams tags logged in chronologic binder"
+            value={data.fullServiceCase.shellfishHarvestTags90Days}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                fullServiceCase: {
+                  ...prev.fullServiceCase,
+                  shellfishHarvestTags90Days: val,
+                },
+              }))
+            }
+          />
         </div>
 
-        {/* 3. Seafood Case Clean & Odor Free */}
-        <div
-          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            data.seafoodCaseCleanOdorFree === true
-              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-              : data.seafoodCaseCleanOdorFree === false
-              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex-1 min-w-0 pr-1">
-            <div className="text-sm font-semibold text-slate-900">
-              Seafood Case Clean, Clear Of Build-Up And Odor Free
-            </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              Trays, ice beds, glass shields, and drain troughs sanitized
-            </div>
-          </div>
-          <div className="shrink-0 self-end sm:self-center">
-            <YesNoToggle
-              value={data.seafoodCaseCleanOdorFree}
-              onChange={(val) => setTopLevelField('seafoodCaseCleanOdorFree', val)}
-              idPrefix="check-seafood-clean"
-              ariaLabel="Seafood Case Clean, Clear Of Build-Up And Odor Free"
-            />
-          </div>
-        </div>
-
-        {/* 4. Tares Done Daily */}
-        <div
-          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            data.taresDoneDaily === true
-              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-              : data.taresDoneDaily === false
-              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex-1 min-w-0 pr-1">
-            <div className="text-sm font-semibold text-slate-900">
-              Tares Done Daily
-            </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              Service and self-serve scale tare logs verified and accurate
-            </div>
-          </div>
-          <div className="shrink-0 self-end sm:self-center">
-            <YesNoToggle
-              value={data.taresDoneDaily}
-              onChange={(val) => setTopLevelField('taresDoneDaily', val)}
-              idPrefix="check-tares-daily"
-              ariaLabel="Tares Done Daily"
-            />
-          </div>
-        </div>
-
-        {/* 5. Deliveries Checked Against Invoice */}
-        <div
-          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            data.deliveriesCheckedInvoice === true
-              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-              : data.deliveriesCheckedInvoice === false
-              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex-1 min-w-0 pr-1">
-            <div className="text-sm font-semibold text-slate-900">
-              Deliveries Checked Against Invoice (Shorts And Quality)
-            </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              Product counted, temp recorded, and credits submitted promptly
-            </div>
-          </div>
-          <div className="shrink-0 self-end sm:self-center">
-            <YesNoToggle
-              value={data.deliveriesCheckedInvoice}
-              onChange={(val) => setTopLevelField('deliveriesCheckedInvoice', val)}
-              idPrefix="check-deliveries-invoice"
-              ariaLabel="Deliveries Checked Against Invoice"
-            />
-          </div>
-        </div>
-
-        {/* 6. Regulatory Decals & Allergens */}
-        <div
-          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            data.regulatoryDecalsAllergens === true
-              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-              : data.regulatoryDecalsAllergens === false
-              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex-1 min-w-0 pr-1">
-            <div className="text-sm font-semibold text-slate-900">
-              Regulatory Decals & Allergens Color Added Consumer Advisory
-            </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              Health advisories, salmon color added, and allergen notices posted
-            </div>
-          </div>
-          <div className="shrink-0 self-end sm:self-center">
-            <YesNoToggle
-              value={data.regulatoryDecalsAllergens}
-              onChange={(val) => setTopLevelField('regulatoryDecalsAllergens', val)}
-              idPrefix="check-regulatory-decals"
-              ariaLabel="Regulatory Decals & Allergens Color Added Consumer Advisory"
-            />
-          </div>
-        </div>
+        <OosCounter
+          idPrefix="fs-oos"
+          count={data.fullServiceCase.numberOfOOS}
+          notes={data.fullServiceCase.oosNotes}
+          onCountChange={(cnt) =>
+            onChange((prev) => ({
+              ...prev,
+              fullServiceCase: { ...prev.fullServiceCase, numberOfOOS: cnt },
+            }))
+          }
+          onNotesChange={(notes) =>
+            onChange((prev) => ({
+              ...prev,
+              fullServiceCase: { ...prev.fullServiceCase, oosNotes: notes },
+            }))
+          }
+        />
       </div>
 
       {/* Self-Serve Case */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-sky-600" />
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Self-Serve Case
-            </h4>
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <Package className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Self-Serve Case</h2>
+            <p className="text-[11px] text-slate-500">Packaged seafood, grab & go, smoked fish</p>
           </div>
         </div>
 
-        {/* Yes/No Items */}
-        <div className="space-y-2.5">
-          {[
-            { key: 'faced' as const, label: 'Faced', desc: 'Product pulled forward and neat' },
-            { key: 'tagged' as const, label: 'Tagged', desc: 'Clear price and item tag on every shelf position' },
-            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Planogram layout matching active store schematic' },
-            { key: 'culledRotated' as const, label: 'Culled / Rotated', desc: 'Older dates rotated forward, poor quality culled' },
-            { key: 'properlyMarkedDown' as const, label: 'Properly Marked Down', desc: 'Yellow/orange clearance tags applied accurately' },
-          ].map((item) => {
-            const val = data.selfServeCase[item.key];
-            return (
-              <div
-                key={item.key}
-                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                  val === true
-                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-                    : val === false
-                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <div className="flex-1 min-w-0 pr-1">
-                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
-                  <div className="text-[11px] text-slate-500">{item.desc}</div>
-                </div>
-                <div className="shrink-0 self-end sm:self-center">
-                  <YesNoToggle
-                    value={val}
-                    onChange={(newVal) => updateSelfServe(item.key, newVal)}
-                    idPrefix={`self-serve-${item.key}`}
-                    compact
-                    ariaLabel={`Self-serve ${item.label}`}
-                  />
-                </div>
-              </div>
-            );
-          })}
+        <div className="divide-y divide-slate-100">
+          <TriToggle
+            idPrefix="ss-faced"
+            label="Faced to Front Edge"
+            value={data.selfServeCase.faced}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                selfServeCase: { ...prev.selfServeCase, faced: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="ss-tagged"
+            label="100% Tagged with Current Prices"
+            value={data.selfServeCase.tagged}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                selfServeCase: { ...prev.selfServeCase, tagged: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="ss-schematic"
+            label="Set to Division Schematic"
+            value={data.selfServeCase.setToSchematic}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                selfServeCase: { ...prev.selfServeCase, setToSchematic: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="ss-culled"
+            label="Culled & Rotated (FIFO)"
+            subtitle="Nearest expiration to front, blown seals removed"
+            value={data.selfServeCase.culledRotated}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                selfServeCase: { ...prev.selfServeCase, culledRotated: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="ss-markdown"
+            label="Properly Marked Down / Distressed Items"
+            subtitle="Quick-sale tags applied according to division policy"
+            value={data.selfServeCase.properlyMarkedDown}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                selfServeCase: { ...prev.selfServeCase, properlyMarkedDown: val },
+              }))
+            }
+          />
         </div>
 
-        {/* Number of OOS Stepper & Missing Items Note */}
-        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+        <OosCounter
+          idPrefix="ss-oos"
+          count={data.selfServeCase.numberOfOOS}
+          notes={data.selfServeCase.oosNotes}
+          onCountChange={(cnt) =>
+            onChange((prev) => ({
+              ...prev,
+              selfServeCase: { ...prev.selfServeCase, numberOfOOS: cnt },
+            }))
+          }
+          onNotesChange={(notes) =>
+            onChange((prev) => ({
+              ...prev,
+              selfServeCase: { ...prev.selfServeCase, oosNotes: notes },
+            }))
+          }
+        />
+      </div>
+
+      {/* Frozen Doors & Bunkers */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-700 flex items-center justify-center">
+            <Snowflake className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Frozen Doors & Bunkers</h2>
+            <p className="text-[11px] text-slate-500">Frozen fillets, shrimp, value-add seafood</p>
+          </div>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          <TriToggle
+            idPrefix="fz-schematic"
+            label="Set to Division Schematic"
+            value={data.frozenDoorsBunkers.setToSchematic}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                frozenDoorsBunkers: { ...prev.frozenDoorsBunkers, setToSchematic: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="fz-faced"
+            label="Faced & Tagged"
+            subtitle="No frost buildup, readable shelf tags"
+            value={data.frozenDoorsBunkers.facedAndTagged}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                frozenDoorsBunkers: { ...prev.frozenDoorsBunkers, facedAndTagged: val },
+              }))
+            }
+          />
+        </div>
+
+        <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-800">Number of OOS (Out of Stock)</div>
-              <div className="text-[11px] text-slate-500">Count of missing schematic items</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.selfServeCase.numberOfOOS, (v) => updateSelfServe('numberOfOOS', v), -1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Decrease self-serve out of stock count"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
+            <span className="text-xs font-bold text-slate-800">Total Frozen OOS:</span>
+            <span className="text-sm font-bold text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-lg">
+              {data.frozenDoorsBunkers.numberOfOOS}
+            </span>
+          </div>
+
+          {/* Sub-breakdown for Doors and Bunkers matching physical checklist */}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
+            <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+              <span className="text-xs font-medium text-slate-700">Doors:</span>
               <input
                 type="number"
                 min="0"
-                value={data.selfServeCase.numberOfOOS}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateSelfServe('numberOfOOS', val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
-                }}
-                onBlur={() => {
-                  if (data.selfServeCase.numberOfOOS === '') {
-                    updateSelfServe('numberOfOOS', 0);
-                  }
-                }}
+                inputMode="numeric"
+                value={data.frozenDoorsBunkers.oosDoors ?? ''}
                 placeholder="0"
-                className="w-14 h-11 min-h-[44px] text-center font-bold text-base bg-white border border-slate-300 rounded-xl focus:outline-hidden focus:border-[#104f9b] shadow-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.selfServeCase.numberOfOOS, (v) => updateSelfServe('numberOfOOS', v), 1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Increase self-serve out of stock count"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Missing items note - only appears if 1 or more missing items */}
-          {isOOSActive(data.selfServeCase.numberOfOOS) && (
-            <div className="pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between mb-1">
-                <label
-                  htmlFor="self-serve-oos-notes"
-                  className="text-xs font-semibold text-rose-700 flex items-center gap-1.5"
-                >
-                  <ClipboardList className="w-3.5 h-3.5 text-rose-600" />
-                  <span>Specific Missing Item(s)</span>
-                  <span className="text-[10px] font-normal text-slate-500">
-                    ({data.selfServeCase.numberOfOOS} missing)
-                  </span>
-                </label>
-                {Boolean(data.selfServeCase.oosNotes?.trim()) && (
-                  <button
-                    type="button"
-                    onClick={() => updateSelfServe('oosNotes', '')}
-                    className="min-h-[44px] px-2.5 inline-flex items-center text-xs font-semibold text-slate-400 hover:text-slate-600 active:text-slate-800 cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <textarea
-                id="self-serve-oos-notes"
-                rows={2}
-                value={data.selfServeCase.oosNotes || ''}
-                onChange={(e) => updateSelfServe('oosNotes', e.target.value)}
-                placeholder="List specific missing item(s) (e.g. 16/20 EZ Peel Shrimp, Cedar Plank Salmon 10oz, Tuna Poke Bowls)..."
-                className="w-full px-3 py-2 text-xs rounded-lg border border-rose-200 bg-white placeholder-slate-400 text-slate-800 focus:outline-hidden focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all resize-none shadow-xs"
+                onChange={(e) => {
+                  const val = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10) || 0);
+                  onChange((prev) => {
+                    const oosDoors = val;
+                    const oosBunkers = prev.frozenDoorsBunkers.oosBunkers ?? 0;
+                    const sum = (oosDoors ?? 0) + oosBunkers;
+                    return {
+                      ...prev,
+                      frozenDoorsBunkers: {
+                        ...prev.frozenDoorsBunkers,
+                        oosDoors,
+                        numberOfOOS: sum,
+                      },
+                    };
+                  });
+                }}
+                className="w-14 h-9 text-center text-xs font-bold bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-hidden focus:border-[#104f9b]"
               />
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Frozen Doors / Bunkers */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Snowflake className="w-4 h-4 text-cyan-600" />
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Frozen Doors / Bunkers
-            </h4>
-          </div>
-        </div>
-
-        <div className="space-y-2.5">
-          {[
-            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Door and bunker layouts follow planogram' },
-            { key: 'facedAndTagged' as const, label: 'Faced & Tagged', desc: 'Freezer shelves fully fronted with matching tags' },
-          ].map((item) => {
-            const val = data.frozenDoorsBunkers[item.key];
-            return (
-              <div
-                key={item.key}
-                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                  val === true
-                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-                    : val === false
-                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <div className="flex-1 min-w-0 pr-1">
-                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
-                  <div className="text-[11px] text-slate-500">{item.desc}</div>
-                </div>
-                <div className="shrink-0 self-end sm:self-center">
-                  <YesNoToggle
-                    value={val}
-                    onChange={(newVal) => updateFrozenDoors(item.key, newVal)}
-                    idPrefix={`frozen-doors-${item.key}`}
-                    compact
-                    ariaLabel={`Frozen doors ${item.label}`}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Number of OOS Doors/Bunkers & Missing Items Note */}
-        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-800">Number of OOS (Doors & Bunkers)</div>
-              <div className="text-[11px] text-slate-500">Out of stock frozen items</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.frozenDoorsBunkers.numberOfOOS, (v) => updateFrozenDoors('numberOfOOS', v), -1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Decrease frozen doors out of stock count"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
+            <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+              <span className="text-xs font-medium text-slate-700">Bunkers:</span>
               <input
                 type="number"
                 min="0"
-                value={data.frozenDoorsBunkers.numberOfOOS}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateFrozenDoors('numberOfOOS', val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
-                }}
-                onBlur={() => {
-                  if (data.frozenDoorsBunkers.numberOfOOS === '') {
-                    updateFrozenDoors('numberOfOOS', 0);
-                  }
-                }}
+                inputMode="numeric"
+                value={data.frozenDoorsBunkers.oosBunkers ?? ''}
                 placeholder="0"
-                className="w-14 h-11 min-h-[44px] text-center font-bold text-base bg-white border border-slate-300 rounded-xl focus:outline-hidden focus:border-[#104f9b] shadow-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.frozenDoorsBunkers.numberOfOOS, (v) => updateFrozenDoors('numberOfOOS', v), 1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Increase frozen doors out of stock count"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Missing items note - only appears if 1 or more missing items */}
-          {isOOSActive(data.frozenDoorsBunkers.numberOfOOS) && (
-            <div className="pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between mb-1">
-                <label
-                  htmlFor="frozen-doors-oos-notes"
-                  className="text-xs font-semibold text-cyan-800 flex items-center gap-1.5"
-                >
-                  <ClipboardList className="w-3.5 h-3.5 text-cyan-600" />
-                  <span>Specific Missing Item(s)</span>
-                  <span className="text-[10px] font-normal text-slate-500">
-                    ({data.frozenDoorsBunkers.numberOfOOS} missing)
-                  </span>
-                </label>
-                {Boolean(data.frozenDoorsBunkers.oosNotes?.trim()) && (
-                  <button
-                    type="button"
-                    onClick={() => updateFrozenDoors('oosNotes', '')}
-                    className="min-h-[44px] px-2.5 inline-flex items-center text-xs font-semibold text-slate-400 hover:text-slate-600 active:text-slate-800 cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <textarea
-                id="frozen-doors-oos-notes"
-                rows={2}
-                value={data.frozenDoorsBunkers.oosNotes || ''}
-                onChange={(e) => updateFrozenDoors('oosNotes', e.target.value)}
-                placeholder="List specific missing item(s) (e.g. 2lb Breaded Shrimp, Lobster Tails 2pk, IQF Cod Fillets)..."
-                className="w-full px-3 py-2 text-xs rounded-lg border border-cyan-200 bg-white placeholder-slate-400 text-slate-800 focus:outline-hidden focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600 transition-all resize-none shadow-xs"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Wet & Dry Racks */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Wet & Dry Racks
-            </h4>
-          </div>
-        </div>
-
-        <div className="space-y-2.5">
-          {[
-            { key: 'faced' as const, label: 'Faced', desc: 'Spices, sauces, and dry rubs fronted neatly' },
-            { key: 'tagged' as const, label: 'Tagged', desc: 'Every spice rack position has current retail shelf tag' },
-            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Rack schematic alignment verified' },
-          ].map((item) => {
-            const val = data.wetDryRacks[item.key];
-            return (
-              <div
-                key={item.key}
-                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                  val === true
-                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-                    : val === false
-                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <div className="flex-1 min-w-0 pr-1">
-                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
-                  <div className="text-[11px] text-slate-500">{item.desc}</div>
-                </div>
-                <div className="shrink-0 self-end sm:self-center">
-                  <YesNoToggle
-                    value={val}
-                    onChange={(newVal) => updateWetDryRacks(item.key, newVal)}
-                    idPrefix={`wet-dry-${item.key}`}
-                    compact
-                    ariaLabel={`Wet & dry racks ${item.label}`}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Number of OOS Wet & Dry & Missing Items Note */}
-        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-800">Number of OOS (Wet & Dry Racks)</div>
-              <div className="text-[11px] text-slate-500">Out of stock spice/marinade/rack items</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.wetDryRacks.numberOfOOS, (v) => updateWetDryRacks('numberOfOOS', v), -1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Decrease wet and dry racks out of stock count"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <input
-                type="number"
-                min="0"
-                value={data.wetDryRacks.numberOfOOS}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  updateWetDryRacks('numberOfOOS', val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
+                  const val = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10) || 0);
+                  onChange((prev) => {
+                    const oosBunkers = val;
+                    const oosDoors = prev.frozenDoorsBunkers.oosDoors ?? 0;
+                    const sum = (oosBunkers ?? 0) + oosDoors;
+                    return {
+                      ...prev,
+                      frozenDoorsBunkers: {
+                        ...prev.frozenDoorsBunkers,
+                        oosBunkers,
+                        numberOfOOS: sum,
+                      },
+                    };
+                  });
                 }}
-                onBlur={() => {
-                  if (data.wetDryRacks.numberOfOOS === '') {
-                    updateWetDryRacks('numberOfOOS', 0);
-                  }
-                }}
-                placeholder="0"
-                className="w-14 h-11 min-h-[44px] text-center font-bold text-base bg-white border border-slate-300 rounded-xl focus:outline-hidden focus:border-[#104f9b] shadow-xs"
+                className="w-14 h-9 text-center text-xs font-bold bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-hidden focus:border-[#104f9b]"
               />
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.wetDryRacks.numberOfOOS, (v) => updateWetDryRacks('numberOfOOS', v), 1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Increase wet and dry racks out of stock count"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
             </div>
           </div>
 
-          {/* Missing items note - only appears if 1 or more missing items */}
-          {isOOSActive(data.wetDryRacks.numberOfOOS) && (
-            <div className="pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between mb-1">
-                <label
-                  htmlFor="wet-dry-oos-notes"
-                  className="text-xs font-semibold text-amber-800 flex items-center gap-1.5"
-                >
-                  <ClipboardList className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Specific Missing Item(s)</span>
-                  <span className="text-[10px] font-normal text-slate-500">
-                    ({data.wetDryRacks.numberOfOOS} missing)
-                  </span>
-                </label>
-                {Boolean(data.wetDryRacks.oosNotes?.trim()) && (
-                  <button
-                    type="button"
-                    onClick={() => updateWetDryRacks('oosNotes', '')}
-                    className="min-h-[44px] px-2.5 inline-flex items-center text-xs font-semibold text-slate-400 hover:text-slate-600 active:text-slate-800 cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <textarea
-                id="wet-dry-oos-notes"
-                rows={2}
-                value={data.wetDryRacks.oosNotes || ''}
-                onChange={(e) => updateWetDryRacks('oosNotes', e.target.value)}
-                placeholder="List specific missing item(s) (e.g. Old Bay Seasoning, Blackened Fish Fry, Lemon Pepper Marinade)..."
-                className="w-full px-3 py-2 text-xs rounded-lg border border-amber-200 bg-white placeholder-slate-400 text-slate-800 focus:outline-hidden focus:border-amber-600 focus:ring-1 focus:ring-amber-600 transition-all resize-none shadow-xs"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Full-Service Case */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Fish className="w-4 h-4 text-indigo-600" />
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Full-Service Case
-            </h4>
-          </div>
-        </div>
-
-        <div className="space-y-2.5">
-          {[
-            { key: 'setToSchematic' as const, label: 'Set to Schematic', desc: 'Case display rows, species placement, and variety matching schematic' },
-            { key: 'properDividers' as const, label: 'Proper Dividers', desc: 'Sanitary clear dividers separating cooked, raw, and ready-to-eat species' },
-            { key: 'correctSluCool' as const, label: 'Correct SLU / COOL', desc: 'Country of Origin Labeling and Scale Look-Up tags correct on display' },
-            { key: 'cookedShrimpDated' as const, label: 'Cooked Shrimp Dated', desc: 'Slack dating and sell-by timers accurately tracked' },
-            { key: 'shellfishHarvestTags90Days' as const, label: 'Shellfish Harvest Tags Kept for 90 Days', desc: 'Oyster, clam, and mussel shellstock tags retained on file in chronological order' },
-          ].map((item) => {
-            const val = data.fullServiceCase[item.key];
-            return (
-              <div
-                key={item.key}
-                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                  val === true
-                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-                    : val === false
-                    ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <div className="flex-1 min-w-0 pr-1">
-                  <div className="text-xs font-semibold text-slate-900">{item.label}</div>
-                  <div className="text-[11px] text-slate-500">{item.desc}</div>
-                </div>
-                <div className="shrink-0 self-end sm:self-center">
-                  <YesNoToggle
-                    value={val}
-                    onChange={(newVal) => updateFullService(item.key, newVal)}
-                    idPrefix={`full-service-${item.key}`}
-                    compact
-                    ariaLabel={`Full-service ${item.label}`}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Number of OOS Full-Service & Missing Items Note */}
-        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-800">Number of OOS (Full-Service Case)</div>
-              <div className="text-[11px] text-slate-500">Missing full-service varieties</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.fullServiceCase.numberOfOOS, (v) => updateFullService('numberOfOOS', v), -1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Decrease full-service out of stock count"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <input
-                type="number"
-                min="0"
-                value={data.fullServiceCase.numberOfOOS}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateFullService('numberOfOOS', val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
-                }}
-                onBlur={() => {
-                  if (data.fullServiceCase.numberOfOOS === '') {
-                    updateFullService('numberOfOOS', 0);
-                  }
-                }}
-                placeholder="0"
-                className="w-14 h-11 min-h-[44px] text-center font-bold text-base bg-white border border-slate-300 rounded-xl focus:outline-hidden focus:border-[#104f9b] shadow-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleOOSStepper(data.fullServiceCase.numberOfOOS, (v) => updateFullService('numberOfOOS', v), 1)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-700 active:bg-slate-100 shadow-xs cursor-pointer"
-                aria-label="Increase full-service out of stock count"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Missing items note - only appears if 1 or more missing items */}
-          {isOOSActive(data.fullServiceCase.numberOfOOS) && (
-            <div className="pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between mb-1">
-                <label
-                  htmlFor="full-service-oos-notes"
-                  className="text-xs font-semibold text-indigo-800 flex items-center gap-1.5"
-                >
-                  <ClipboardList className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Specific Missing Item(s)</span>
-                  <span className="text-[10px] font-normal text-slate-500">
-                    ({data.fullServiceCase.numberOfOOS} missing)
-                  </span>
-                </label>
-                {Boolean(data.fullServiceCase.oosNotes?.trim()) && (
-                  <button
-                    type="button"
-                    onClick={() => updateFullService('oosNotes', '')}
-                    className="min-h-[44px] px-2.5 inline-flex items-center text-xs font-semibold text-slate-400 hover:text-slate-600 active:text-slate-800 cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <textarea
-                id="full-service-oos-notes"
-                rows={2}
-                value={data.fullServiceCase.oosNotes || ''}
-                onChange={(e) => updateFullService('oosNotes', e.target.value)}
-                placeholder="List specific missing item(s) (e.g. Fresh Halibut Fillets, Jumbo Sea Scallops, Wild Sockeye Salmon)..."
-                className="w-full px-3 py-2 text-xs rounded-lg border border-indigo-200 bg-white placeholder-slate-400 text-slate-800 focus:outline-hidden focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all resize-none shadow-xs"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Perishable Link Item */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
-        <div
-          className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            data.perishableLinkUsed === true
-              ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-              : data.perishableLinkUsed === false
-              ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex-1 min-w-0 pr-1">
-            <div className="text-sm font-semibold text-slate-900">
-              Perishable Link Used For Overstock Items
-            </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              Inventory link maintained for excess product tracking & shrink minimization
-            </div>
-          </div>
-          <div className="shrink-0 self-end sm:self-center">
-            <YesNoToggle
-              value={data.perishableLinkUsed}
-              onChange={(val) => setTopLevelField('perishableLinkUsed', val)}
-              idPrefix="check-perishable-link"
-              ariaLabel="Perishable Link Used For Overstock Items"
+          <div className="space-y-1 pt-1">
+            <label htmlFor="fz-oos-notes" className="text-[11px] font-bold text-slate-700">
+              Missing Frozen Items (Notes):
+            </label>
+            <input
+              type="text"
+              id="fz-oos-notes"
+              placeholder="e.g. Frozen raw shrimp 16/20, breaded cod fillets..."
+              value={data.frozenDoorsBunkers.oosNotes}
+              onChange={(e) =>
+                onChange((prev) => ({
+                  ...prev,
+                  frozenDoorsBunkers: { ...prev.frozenDoorsBunkers, oosNotes: e.target.value },
+                }))
+              }
+              className="w-full min-h-[38px] px-3 rounded-xl border border-slate-300 bg-white text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#104f9b]"
             />
           </div>
         </div>
+      </div>
+
+      {/* Wet / Dry Racks & Spices */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Wet / Dry Racks & Condiments</h2>
+            <p className="text-[11px] text-slate-500">Coatings, marinades, cocktail sauce, cedar planks</p>
+          </div>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          <TriToggle
+            idPrefix="wd-faced"
+            label="Faced"
+            value={data.wetDryRacks.faced}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                wetDryRacks: { ...prev.wetDryRacks, faced: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="wd-tagged"
+            label="Tagged with Correct Prices"
+            value={data.wetDryRacks.tagged}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                wetDryRacks: { ...prev.wetDryRacks, tagged: val },
+              }))
+            }
+          />
+          <TriToggle
+            idPrefix="wd-schematic"
+            label="Set to Division Schematic"
+            value={data.wetDryRacks.setToSchematic}
+            onChange={(val) =>
+              onChange((prev) => ({
+                ...prev,
+                wetDryRacks: { ...prev.wetDryRacks, setToSchematic: val },
+              }))
+            }
+          />
+        </div>
+
+        <OosCounter
+          idPrefix="wd-oos"
+          count={data.wetDryRacks.numberOfOOS}
+          notes={data.wetDryRacks.oosNotes}
+          onCountChange={(cnt) =>
+            onChange((prev) => ({
+              ...prev,
+              wetDryRacks: { ...prev.wetDryRacks, numberOfOOS: cnt },
+            }))
+          }
+          onNotesChange={(notes) =>
+            onChange((prev) => ({
+              ...prev,
+              wetDryRacks: { ...prev.wetDryRacks, oosNotes: notes },
+            }))
+          }
+        />
       </div>
     </div>
   );

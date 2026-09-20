@@ -1,206 +1,246 @@
 import React from 'react';
-import { ComplianceTrainingChecks, YesNoValue } from '../types';
-import { ShieldCheck, FileCheck, Thermometer, TrendingUp, Scan, Globe, BookOpen, AlertOctagon, Tag } from 'lucide-react';
-import { YesNoToggle } from './YesNoToggle';
+import { ComplianceChecks } from '../types';
+import { Check, X, ShieldCheck, Thermometer, FileText, TrendingUp, CheckSquare, ScanLine, Laptop, BookOpen, AlertTriangle, Sparkles } from 'lucide-react';
 
 interface Step3ComplianceProps {
-  data: ComplianceTrainingChecks;
-  onChange: (updater: (prev: ComplianceTrainingChecks) => ComplianceTrainingChecks) => void;
+  data: ComplianceChecks;
+  onChange: (updater: (prev: ComplianceChecks) => ComplianceChecks) => void;
 }
 
-const complianceItems: Array<{
-  key: keyof ComplianceTrainingChecks;
+interface ComplianceItemProps {
+  idPrefix: string;
   title: string;
-  desc: string;
-  icon: React.ElementType;
-}> = [
-  {
-    key: 'adSupport',
-    title: 'Ad Support',
-    desc: 'Promotional features, ad items stocked, and display signage accurate',
-    icon: Tag,
-  },
-  {
-    key: 'coolersFreezersOrganizedDated',
-    title: 'Coolers/Freezers Organized And Dated',
-    desc: 'Walk-ins rotated, shelving clean, all product labeled with date',
-    icon: ShieldCheck,
-  },
-  {
-    key: 'temperatureChecks',
-    title: 'Temperature Checks',
-    desc: 'Cases and storage holding verified safe temps (<40°F / 0°F freezer)',
-    icon: Thermometer,
-  },
-  {
-    key: 'salesPurchasesTrackingReviewed',
-    title: 'Sales And Purchases Tracking Reviewed',
-    desc: 'Department movement, shrink trends, and order tracking audited',
-    icon: TrendingUp,
-  },
-  {
-    key: 'form120Submitted',
-    title: 'Form 120 Submitted For Short/Poor Quality Product',
-    desc: 'Vendor shorts and warehouse quality credit submissions completed',
-    icon: FileCheck,
-  },
-  {
-    key: 'visionProScannedProductionList',
-    title: 'Vision Pro Scanned And Production List Followed',
-    desc: 'Handheld scanner utilized and daily production prep list followed',
-    icon: Scan,
-  },
-  {
-    key: 'schematicIntegrityOnline',
-    title: 'Schematic Integrity-Accessing Schematics Online',
-    desc: 'Store team able to access and follow active online POG schematics',
-    icon: Globe,
-  },
-  {
-    key: 'newProgramBulletinMeatSeafood',
-    title: 'New Program/New Bulletin-Accessing On Meat & Seafood Page',
-    desc: 'Division updates, bulletin boards, and current programs reviewed',
-    icon: BookOpen,
-  },
-  {
-    key: 'foodSafetyHandlingDatingPolicy',
-    title: 'Food Safety/Seafood Handling/Dating Policy',
-    desc: 'Cross-contamination prevention, glove rules, sanitizing & sell-by codes',
-    icon: AlertOctagon,
-  },
-  {
-    key: 'markDownProcedures',
-    title: 'Mark Down Procedures',
-    desc: 'Timely cull markdown schedule followed, accurate orange/yellow tag pricing',
-    icon: Tag,
-  },
-];
+  description: string;
+  icon: React.ReactNode;
+  value: boolean | null;
+  onChange: (val: boolean | null) => void;
+}
 
-export const Step3Compliance: React.FC<Step3ComplianceProps> = ({ data, onChange }) => {
-  const setComplianceValue = (key: keyof ComplianceTrainingChecks, val: YesNoValue) => {
-    onChange((prev) => ({
-      ...prev,
-      [key]: val,
-    }));
-  };
-
-  const values = complianceItems.map((item) => data[item.key]);
-  const totalYes = values.filter((v) => v === true).length;
-  const totalNo = values.filter((v) => v === false).length;
-  const totalEvaluated = values.filter((v) => v !== null && v !== undefined).length;
-  const totalCount = complianceItems.length;
-
-  const handleClearAll = () => {
-    onChange((prev) => {
-      const next = { ...prev };
-      complianceItems.forEach((item) => {
-        next[item.key] = null;
-      });
-      return next;
-    });
-  };
-
+const ComplianceItem: React.FC<ComplianceItemProps> = ({
+  idPrefix,
+  title,
+  description,
+  icon,
+  value,
+  onChange,
+}) => {
   return (
-    <div id="step-3-container" className="space-y-4">
-      {/* Header card with compliance score */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#104f9b] text-white flex items-center justify-center font-bold text-sm shadow-xs">
-              3
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg">Compliance & Training</h3>
-              <p className="text-xs text-slate-500">
-                Division seafood policy, food safety, and retail operations
-              </p>
-            </div>
-          </div>
-
-          <div className="text-right flex items-center gap-1.5 flex-wrap justify-end">
-            {totalYes > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                {totalYes} YES
-              </span>
-            )}
-            {totalNo > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
-                {totalNo} NO
-              </span>
-            )}
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
-              {totalEvaluated}/{totalCount} Evaluated
-            </span>
-          </div>
+    <div className="py-3 border-b border-slate-100 last:border-b-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <div className="flex items-start gap-3 flex-1 pr-2">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+          value === true
+            ? 'bg-emerald-50 text-emerald-600'
+            : value === false
+            ? 'bg-rose-50 text-rose-600'
+            : 'bg-slate-100 text-slate-500'
+        }`}>
+          {icon}
         </div>
-
-        {/* Individual Verification Notice & Clear Option */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
-          <span className="text-slate-500 italic">
-            Select YES, NO, or Leave Blank for each compliance standard during store walk
-          </span>
-          {totalEvaluated > 0 && (
-            <button
-              type="button"
-              onClick={handleClearAll}
-              className="min-h-[44px] py-2 px-3 text-xs font-semibold rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 transition-colors flex items-center justify-center cursor-pointer"
-            >
-              Clear Section
-            </button>
-          )}
+        <div>
+          <div className="text-xs font-bold text-slate-900 leading-snug">{title}</div>
+          <div className="text-[11px] text-slate-500 mt-0.5 leading-normal">{description}</div>
         </div>
       </div>
 
-      {/* Compliance List */}
-      <div className="space-y-2.5">
-        {complianceItems.map((item) => {
-          const val = data[item.key];
-          const Icon = item.icon;
+      <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0 pl-11 sm:pl-0">
+        <button
+          type="button"
+          id={`${idPrefix}-yes`}
+          onClick={() => onChange(true)}
+          className={`min-h-[44px] min-w-[58px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+            value === true
+              ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400/40'
+              : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 active:bg-slate-200'
+          }`}
+        >
+          <Check className="w-3.5 h-3.5" />
+          <span>Yes</span>
+        </button>
 
-          return (
-            <div
-              key={item.key}
-              className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 ${
-                val === true
-                  ? 'bg-emerald-50/40 border-emerald-300/80 shadow-xs'
-                  : val === false
-                  ? 'bg-rose-50/40 border-rose-300/80 shadow-xs'
-                  : 'bg-white border-slate-200'
-              }`}
-            >
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border ${
-                    val === true
-                      ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
-                      : val === false
-                      ? 'bg-rose-100 border-rose-200 text-rose-700'
-                      : 'bg-slate-100 border-slate-200 text-slate-500'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-slate-900 leading-tight">
-                    {item.title}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    {item.desc}
-                  </p>
-                </div>
-              </div>
+        <button
+          type="button"
+          id={`${idPrefix}-no`}
+          onClick={() => onChange(false)}
+          className={`min-h-[44px] min-w-[58px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+            value === false
+              ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-400/40'
+              : 'bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700 active:bg-slate-200'
+          }`}
+        >
+          <X className="w-3.5 h-3.5" />
+          <span>No</span>
+        </button>
 
-              <div className="shrink-0 self-end sm:self-center">
-                <YesNoToggle
-                  value={val}
-                  onChange={(newVal) => setComplianceValue(item.key, newVal)}
-                  idPrefix={`compliance-${item.key}`}
-                  ariaLabel={item.title}
-                />
-              </div>
-            </div>
-          );
-        })}
+        <button
+          type="button"
+          id={`${idPrefix}-blank`}
+          onClick={() => onChange(null)}
+          className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-medium flex items-center justify-center transition-all cursor-pointer ${
+            value === null
+              ? 'bg-slate-200 text-slate-800 font-semibold ring-1 ring-slate-300'
+              : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 active:bg-slate-200'
+          }`}
+          title="Leave blank / Unanswered"
+        >
+          <span className="text-[11px]">Leave Blank</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const Step3Compliance: React.FC<Step3ComplianceProps> = ({ data, onChange }) => {
+  const allPassed = Object.values(data).every((v) => v === true);
+
+  const handleMarkAllPassed = () => {
+    onChange(() => ({
+      adSupport: true,
+      coolersFreezersOrganizedDated: true,
+      temperatureChecks: true,
+      salesPurchasesTrackingReviewed: true,
+      form120Submitted: true,
+      visionProScannedProductionList: true,
+      schematicIntegrityOnline: true,
+      newProgramBulletinMeatSeafood: true,
+      foodSafetyHandlingDatingPolicy: true,
+      markDownProcedures: true,
+    }));
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header with Quick Action */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#104f9b] flex items-center justify-center">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Compliance & Operations Audit</h2>
+            <p className="text-[11px] text-slate-500">Policies, logs, and food safety standards</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleMarkAllPassed}
+          className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-1.5 border border-emerald-200/70 transition-colors cursor-pointer shrink-0"
+          title="Set all compliance items to Pass"
+        >
+          <Check className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Pass All</span>
+        </button>
+      </div>
+
+      {/* Compliance Items List */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs divide-y divide-slate-100">
+        <ComplianceItem
+          idPrefix="comp-ad"
+          title="Ad Support & Promotion Integrity"
+          description="Featured circular items in stock, ad sign placards posted, proper promotional prices active"
+          icon={<FileText className="w-4 h-4" />}
+          value={data.adSupport}
+          onChange={(val) => onChange((prev) => ({ ...prev, adSupport: val }))}
+        />
+
+        <ComplianceItem
+          idPrefix="comp-coolers"
+          title="Coolers & Freezers Organized & Dated"
+          description="Walk-in cooler and freezers 6 inches off floor, slotted, rotated FIFO, dated containers"
+          icon={<ShieldCheck className="w-4 h-4" />}
+          value={data.coolersFreezersOrganizedDated}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, coolersFreezersOrganizedDated: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-temps"
+          title="Temperature Checks Logged"
+          description="Case & cooler logs verified (Seafood under 38°F, Freezers under 0°F, calibrated thermometer)"
+          icon={<Thermometer className="w-4 h-4" />}
+          value={data.temperatureChecks}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, temperatureChecks: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-sales"
+          title="Sales & Purchases Tracking Reviewed"
+          description="Sales tracking sheet, gross margin, purchases reviewed with department manager"
+          icon={<TrendingUp className="w-4 h-4" />}
+          value={data.salesPurchasesTrackingReviewed}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, salesPurchasesTrackingReviewed: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-form120"
+          title="Form 120 Submitted (Shrink / Credits)"
+          description="Credit requests, supplier adjustments, and shrink transfers accurately submitted"
+          icon={<CheckSquare className="w-4 h-4" />}
+          value={data.form120Submitted}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, form120Submitted: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-vision"
+          title="Vision Pro Scanned Production List"
+          description="Daily production list scanned, printed, and strictly utilized by counter clerks"
+          icon={<ScanLine className="w-4 h-4" />}
+          value={data.visionProScannedProductionList}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, visionProScannedProductionList: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-pog"
+          title="Schematic Integrity Online (ePOG)"
+          description="Online schematic matches physical layout; unauthorized cuts or skips not present"
+          icon={<Laptop className="w-4 h-4" />}
+          value={data.schematicIntegrityOnline}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, schematicIntegrityOnline: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-bulletin"
+          title="New Program Bulletin Meat & Seafood"
+          description="Division merchandising bulletins posted in binder; seasonal programs executed"
+          icon={<BookOpen className="w-4 h-4" />}
+          value={data.newProgramBulletinMeatSeafood}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, newProgramBulletinMeatSeafood: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-safety"
+          title="Food Safety Handling & Dating Policy"
+          description="Cross-contamination protocols, sanitizer bucket at strength (200-400ppm), glove usage"
+          icon={<AlertTriangle className="w-4 h-4" />}
+          value={data.foodSafetyHandlingDatingPolicy}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, foodSafetyHandlingDatingPolicy: val }))
+          }
+        />
+
+        <ComplianceItem
+          idPrefix="comp-markdown"
+          title="Markdown Procedures & Freshness Protocol"
+          description="Daily markdown timeline followed (AM/PM checks), correct orange/red markdown stickers"
+          icon={<Sparkles className="w-4 h-4" />}
+          value={data.markDownProcedures}
+          onChange={(val) =>
+            onChange((prev) => ({ ...prev, markDownProcedures: val }))
+          }
+        />
       </div>
     </div>
   );

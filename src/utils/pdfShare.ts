@@ -1,111 +1,73 @@
 import { ChecklistData } from '../types';
-import { generateStoreVisitPDF, generateSimpleChecklistPDF } from './pdfGenerator';
-
-export interface ShareReportResult {
-  success: boolean;
-  cancelled?: boolean;
-  method: 'native-file' | 'native-text' | 'download-fallback';
-  message: string;
-}
+import { generateStoreVisitPDF } from './pdfGenerator';
+import { calculateAuditStats } from './historyStorage';
 
 /**
- * Checks if the Web Share API is available in the current browser environment.
- */
-export function isWebShareSupported(): boolean {
-  return typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-}
-
-/**
- * Shares the generated PDF report using the Web Share API (Messages, Mail, AirDrop, WhatsApp, etc.).
- * Gracefully falls back to downloading the PDF if Web Share is unavailable or restricted.
+ * Ensures the PDF download executes first before any share dialog or fallback.
  */
 export async function shareStoreVisitPDF(
   data: ChecklistData,
-  reportType: 'detailed' | 'simple' = 'simple'
-): Promise<ShareReportResult> {
-  const doc = reportType === 'detailed' ? generateStoreVisitPDF(data) : generateSimpleChecklistPDF(data);
-  const storeNum = data.header.storeNumber || 'Checklist';
-  const visitDate = data.header.visitDate || 'Visit';
-  const typePrefix = reportType === 'detailed' ? 'DetailedReport' : 'SimpleChecklist';
-  const fileName = `MountainWest_${typePrefix}_Store${storeNum}_${visitDate}.pdf`;
-  
-  const title = `Mountain West Store #${storeNum} ${reportType === 'detailed' ? 'Detailed Audit Report' : 'Checklist'}`;
-  const text = `Mountain West Division Seafood Inspection Report for Store #${storeNum} (${data.header.visitDate || 'Today'}). Audited by ${data.header.merchandiserName || 'Merchandiser'}.`;
+  reportType: 'simple' | 'detailed' = 'simple'
+): Promise<void> {
+  const stats = calculateAuditStats(data);
+  const storeNum = data.header.storeNumber || 'N/A';
+  const visitDate = data.header.visitDate || new Date().toISOString().split('T')[0];
+  const merchandiser = data.header.merchandiserName || 'Merchandiser';
 
-  let pdfFile: File | null = null;
+  // RULE 5: Trigger successful PDF download FIRST before any share actions execute
+  const doc = await generateStoreVisitPDF(data, reportType, true);
+
+  const shareTitle = `MWD Seafood Store Visit - Store #${storeNum}`;
+  const shareText = `Mountain West Division (Albertsons, Safeway, & Lucky) Seafood Merchandising Report for Store #${storeNum} on ${visitDate}. Passed: ${stats.passed}, Deficiencies: ${stats.failed}, Total OOS: ${stats.totalOOS}. Merchandiser: ${merchandiser}.`;
+
   try {
-    const blob = doc.output('blob');
-    pdfFile = new File([blob], fileName, { type: 'application/pdf' });
-  } catch (err) {
-    console.warn('Could not construct File object for sharing:', err);
-  }
+    const pdfBlob = doc.output('blob');
+    const fileName = `MWD_Seafood_Visit_Store_${storeNum}_${visitDate}_${reportType}.pdf`;
+    const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-  // 1. Check if native Web Share with file attachments is supported
-  if (
-    pdfFile &&
-    typeof navigator !== 'undefined' &&
-    typeof navigator.canShare === 'function'
-  ) {
-    try {
-      const shareData = {
-        title,
-        text,
-        files: [pdfFile],
-      };
-
-      if (navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-        return {
-          success: true,
-          method: 'native-file',
-          message: 'Report shared successfully!',
-        };
-      }
-    } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        return {
-          success: false,
-          cancelled: true,
-          method: 'native-file',
-          message: 'Share sheet closed.',
-        };
-      }
-      console.warn('File share failed, trying text share or download fallback:', err);
-    }
-  }
-
-  // 2. If file sharing failed or unsupported, try text Web Share
-  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-    try {
+    // Try native Web Share with file attachment (iOS Safari supported)
+    if (
+      typeof navigator.canShare === 'function' &&
+      navigator.canShare({ files: [pdfFile] })
+    ) {
       await navigator.share({
-        title,
-        text,
+        title: shareTitle,
+        text: shareText,
+        files: [pdfFile],
       });
-      // Also download the PDF so the user has the actual file
-      doc.save(fileName);
-      return {
-        success: true,
-        method: 'native-text',
-        message: 'Report details shared; PDF saved to your downloads to attach.',
-      };
-    } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        return {
-          success: false,
-          cancelled: true,
-          method: 'native-text',
-          message: 'Share sheet closed.',
-        };
-      }
-      console.warn('Web Share text sharing failed:', err);
+      return;
     }
+
+    // Try text-only native Web Share
+    if (typeof navigator.share === 'function') {
+      await navigator.share({
+        title: shareTitle,
+        text: shareText,
+      });
+      return;
+    }
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      // User dismissed native share sheet; PDF was already downloaded safely
+      return;
+    }
+    console.warn('Web Share dialog closed or unhandled:', err);
   }
 
-  // 3. Fallback: Save PDF directly to device
-  doc.save(fileName);
-  return {
-    success: true,
-    method: 'download-fallback',
-    message: 'PDF report downloaded to your device.',
-  };
+  // Fallback: Open mailto with summary
+  const subject = encodeURIComponent(
+    `MWD Seafood Store Visit Report - Store #${storeNum} (${visitDate}) [Albertsons, Safeway, & Lucky]`
+  );
+  const body = encodeURIComponent(
+    `Hello,\n\nPlease find the summary for Mountain West Division (Albertsons, Safeway, & Lucky) Seafood Merchandising visit at Store #${storeNum}.\n\n` +
+      `• Date: ${visitDate}\n` +
+      `• Merchandiser: ${merchandiser}\n` +
+      `• Passed Items: ${stats.passed}\n` +
+      `• Deficiencies: ${stats.failed}\n` +
+      `• Total Out of Stock: ${stats.totalOOS}\n\n` +
+      (reportType === 'detailed' && data.generalNotes ? `Notes: ${data.generalNotes}\n\n` : '') +
+      `The official ${reportType === 'simple' ? '2-Page Simple' : '3-Page Detailed'} PDF report has been downloaded to this device.`
+  );
+
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
