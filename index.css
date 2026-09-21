@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .pt-safe {
+    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+  }
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
